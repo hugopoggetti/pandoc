@@ -1,3 +1,24 @@
+{-
+-- EPITECH PROJECT, 2025
+-- B-FUN-400-TLS-4-1-compressor-hugo.poggetti
+-- File description:
+-- Document
+-}
+
+module Document ( Document(Document)
+                , Meta(Meta)
+                , MetaValue(..)
+                , Block(..)
+                , Inline(..)
+                , Attr
+                , Target
+                , QuoteType(..)
+                , MathType(..)
+                , Format(..)
+                , ListAttributes
+                , ListNumberDelim(..)
+                , ListNumberStyle(..)
+                ) where
 
 -- | Represents a complete document with metadata and content blocks.
 data Document = Document Meta [Block]
@@ -33,8 +54,6 @@ data Block
   | DefinitionList [([Inline], [[Block]])]     -- ^ List of terms and definitions
   | Header Int Attr [Inline]                   -- ^ A header (level, attrs, content)
   | HorizontalRule                             -- ^ Horizontal line (---)
-  | Table Attr Caption [ColSpec] TableHead [TableBody] TableFoot
-                                               -- ^ Complex table structure
   | Div Attr [Block]                           -- ^ A generic container with attributes
   | Null                                       -- ^ No content (empty block)
   deriving (Show, Eq)
@@ -49,7 +68,7 @@ data Inline
   | Subscript [Inline]                         -- ^ Subscript text
   | SmallCaps [Inline]                         -- ^ Small caps text
   | Quoted QuoteType [Inline]                  -- ^ Quoted text
-  | Cite [Citation] [Inline]                   -- ^ Citation with bibliography reference
+  | Cite [Inline]                              -- ^ Citation with bibliography reference
   | Code Attr String                           -- ^ Inline code
   | Space                                      -- ^ Space between words
   | SoftBreak                                  -- ^ Soft line break (no new paragraph)
