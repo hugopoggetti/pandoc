@@ -26,6 +26,8 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Definitions.Document
+      Renders.MarkdownRender.MarkdownRender
   other-modules:
       Paths_mypandoc
   autogen-modules:
@@ -40,8 +42,6 @@ library
 executable mypandoc-exe
   main-is: Main.hs
   other-modules:
-      Document
-      MarkdownRender
       Paths_mypandoc
   autogen-modules:
       Paths_mypandoc

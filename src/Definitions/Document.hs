@@ -5,7 +5,7 @@
 -- Document
 -}
 
-module Document ( Document(Document)
+module Definitions.Document ( Document(Document)
                 , Meta(Meta)
                 , MetaValue(..)
                 , Block(..)

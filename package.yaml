@@ -35,6 +35,10 @@ ghc-options:
 
 library:
   source-dirs: src
+  exposed-modules:
+    - Lib
+    - Definitions.Document
+    - Renders.MarkdownRender.MarkdownRender
 
 executables:
   mypandoc-exe:
