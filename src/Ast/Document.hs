@@ -5,11 +5,12 @@
 -- Document
 -}
 
-module Definitions.Document ( Document(Document)
-                , Meta(Meta)
-                , MetaValue(..)
+module Ast.Document ( Document(Document)
+                , Meta(..)
                 , Block(..)
                 , Inline(..)
+                , Citation(..)
+                , CitationMode(..)
                 , Attr
                 , Target
                 , QuoteType(..)
@@ -29,18 +30,7 @@ data Meta = Meta
   { metaTitle    :: [Inline]                   -- ^ Document title
   , metaAuthors  :: [[Inline]]                 -- ^ List of authors (each a list of inline elements)
   , metaDate     :: [Inline]                   -- ^ Date of the document
-  , metaOther    :: [(String, MetaValue)]      -- ^ Other custom metadata fields
   } deriving (Show, Eq)
-
--- | Values that can appear in metadata
-data MetaValue
-  = MetaString String                          -- ^ A simple string value
-  | MetaBool Bool                              -- ^ A boolean value
-  | MetaList [MetaValue]                       -- ^ A list of metadata values
-  | MetaMap [(String, MetaValue)]              -- ^ A key-value map
-  | MetaInlines [Inline]                       -- ^ Inline content (like formatted text)
-  | MetaBlocks [Block]                         -- ^ Block content (like full paragraphs)
-  deriving (Show, Eq)
 
 -- | Top-level content blocks (paragraphs, headers, lists, etc.)
 data Block
@@ -68,7 +58,7 @@ data Inline
   | Subscript [Inline]                         -- ^ Subscript text
   | SmallCaps [Inline]                         -- ^ Small caps text
   | Quoted QuoteType [Inline]                  -- ^ Quoted text
-  | Cite [Inline]                              -- ^ Citation with bibliography reference
+  | Cite [Citation] [Inline]                   -- ^ Citation with bibliography reference
   | Code Attr String                           -- ^ Inline code
   | Space                                      -- ^ Space between words
   | SoftBreak                                  -- ^ Soft line break (no new paragraph)
@@ -80,6 +70,19 @@ data Inline
   | Note [Block]                               -- ^ Footnote
   | Span Attr [Inline]                         -- ^ Inline container with attributes
   deriving (Show, Eq)
+
+-- | Citation 
+data Citation = Citation { citationId      :: String
+                         , citationPrefix  :: [Inline]
+                         , citationSuffix  :: [Inline]
+                         , citationMode    :: CitationMode
+                         , citationNoteNum :: Int
+                         , citationHash    :: Int
+                         }
+                deriving (Show, Eq)
+
+data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
+                    deriving (Show, Eq, Ord, Read)
 
 -- | Common attributes used in code, divs, spans, etc.
 -- (identifier, list of classes, key-value attributes)
