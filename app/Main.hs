@@ -1,3 +1,10 @@
+{-
+-- EPITECH PROJECT, 2025
+-- B-FUN-400-TLS-4-1-mypandoc-hugo.poggetti
+-- File description:
+-- Main
+-}
+
 module Main (main) where
 
 import Lib (Parser, runParser,
@@ -12,11 +19,18 @@ import Lib (Parser, runParser,
         parseMany,
         parseSome)
 import Control.Applicative ((<|>), (<*>))
+import OptsParserSystem
+
+import System.Environment (getArgs)
+import System.Exit
+
+start :: [String] -> Opts -> IO ()
+start args opts
+    | globalOptsChecker args opts == False =
+        putStrLn usage >> exitWith(ExitFailure 84)
+    | otherwise = return ()
 
 main :: IO ()
 main = do
-    input <- getLine
-    let parser = parseTuple parseInt
-    case runParser parser input of
-        Just (result, rest) -> putStrLn $ "Parsed character: " ++ show result ++ ", remaining string: " ++ rest
-        Nothing -> putStrLn "Failed to parse input"
+    args <- getArgs
+    start args (optsParser args)
