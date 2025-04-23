@@ -53,30 +53,19 @@ checkoptionnal opts
       in checkoptionnal opts { outputFile = Just out }
   | otherwise = opts
 
-
--- parsefile
+readthefile :: String -> IO String
+readthefile path = do
+    fileHandle <- openFile path ReadMode
+    hGetContents fileHandle
  
 
 start :: [String] -> Opts -> IO ()
 start args opts
     | not (globalOptsChecker args opts) =
         putStrLn usage >> exitWith (ExitFailure 84)
-    | otherwise = return ()--parsefile
-        -- do 
-        -- putStrLn ((optsToList opts)!!0)
-        -- putStrLn ((optsToList opts)!!1)
-        -- putStrLn ((optsToList opts)!!2)
-        -- putStrLn ((optsToList opts)!!3)
-        -- putStrLn ((optsToList opts)!!4)
-        -- putStrLn ((optsToList opts)!!5)
-        -- putStrLn ((optsToList opts)!!6)
-        -- putStrLn ((optsToList opts)!!7)
-
-
-readthefile :: String -> IO String
-readthefile path = do
-    fileHandle <- openFile path ReadMode
-    hGetContents fileHandle
+    | otherwise = 
+        let filecontent = readthefile (inputFile opts)
+        return ()--parsefile
 
 main :: IO ()
 main = do
