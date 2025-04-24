@@ -83,7 +83,9 @@ markRenderBlock (BulletList blocks) = markRenderBulletList blocks
 markRenderBlock (DefinitionList items) = markRenderDefList items
 markRenderBlock (Header lev content) = replicate lev '#' ++ 
     " " ++ markRenderInlines content ++"\n"
-markRenderBlock (Section xs ys) = markRenderInlines xs ++ "\n" ++ markdownRenderBody ys
+markRenderBlock (Section _ [] ys) = markdownRenderBody ys
+markRenderBlock (Section level xs ys) = replicate level '#' ++ " " 
+    ++ markRenderInlines xs ++ "\n" ++ markdownRenderBody ys
 markRenderBlock _ = ""
 
 -- | header generation with Meta 
@@ -92,9 +94,9 @@ markdownRenderTitle (Meta title auth date) =
     let 
         titleStr  = if null title then "" else "title: " 
             ++ markRenderInlines title ++ "\n"
-        authStr   = if null auth then "" else "Authors: " ++
+        authStr   = if null auth then "" else "author: " ++
             intercalate ", " (map markRenderInlines auth) ++ "\n"
-        dateStr   = if null date then "" else "Date: "
+        dateStr   = if null date then "" else "date: "
             ++ markRenderInlines date ++ "\n"
     in "---\n" ++ titleStr ++ authStr ++ dateStr ++ "---\n\n"
 

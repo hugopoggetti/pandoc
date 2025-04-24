@@ -37,7 +37,7 @@ data Block
   | BulletList [[Block]]                       -- ^ Unordered list (*, -, etc.)
   | DefinitionList [([Inline], [[Block]])]     -- ^ List of terms and definitions
   | Header Int [Inline]                        -- ^ A header (level, attrs, content) optional a list of block to create section
-  | Section [Inline] [Block]                   -- ^ A section with an inline header and a list of other section
+  | Section Int [Inline] [Block]               -- ^ A section with an inline header and a list of other section in the current section
   | Null                                       -- ^ No content (empty block)
   deriving (Show, Eq)
 

@@ -11,7 +11,8 @@ import Data.List (intercalate)
 
 -- | Render of json Inline list
 jsonRenderInlinesQ :: [Inline] -> String
-jsonRenderInlinesQ = concatMap jsonRenderInline
+jsonRenderInlinesQ [] = "\"\""
+jsonRenderInlinesQ a = concatMap jsonRenderInline a
 
 jsonRenderInlines :: [Inline] -> String
 jsonRenderInlines xs = "[" ++ intercalate ", " (map jsonRenderInline xs) ++ "]"
@@ -23,8 +24,8 @@ toJson s = "\"" ++ s ++ "\""
 -- | Recursive func to generate inline in json format with all conventions 
 jsonRenderInline :: Inline -> String
 jsonRenderInline (Str s) = toJson (escapeQuotes s) 
-jsonRenderInline (Emph xs) = "{\"bold\": " ++ jsonRenderInlines xs ++ "}"
-jsonRenderInline (Strong xs) = "{\"italic\": " ++ jsonRenderInlines xs ++ "}"
+jsonRenderInline (Emph xs) = "{\"italic\": " ++ jsonRenderInlinesQ xs ++ "}"
+jsonRenderInline (Strong xs) = "{\"bold\": " ++ jsonRenderInlinesQ xs ++ "}"
 jsonRenderInline (Code s) = 
   "{\"code\": " ++ toJson (escapeQuotes s) ++ "}"
 jsonRenderInline (RawInline (Format f) s) =
@@ -32,16 +33,12 @@ jsonRenderInline (RawInline (Format f) s) =
     ++ "\"format\": " ++ toJson f ++ ", "
     ++ "\"content\": " ++ toJson (escapeQuotes s)
   ++ "}}"
-jsonRenderInline (Link xs (url, title)) = 
-  "{\"link\": {"
-    ++ "\"text\": " ++ jsonRenderInlines xs ++ ", "
-    ++ "\"target\": {\"url\": " ++ toJson url ++ ", \"title\": "
-    ++ toJson title ++ "}" ++ "}}"
-jsonRenderInline (Image xs (url, title)) = 
-  "{\"image\": {"
-    ++ "\"altText\": " ++ jsonRenderInlines xs ++ ", "
-    ++ "\"target\": {\"url\": " ++ toJson url ++ ", \"title\": "
-    ++ toJson title ++ "}" ++ "}}"
+jsonRenderInline (Link xs (url, _)) = 
+  "{\"link\": {" ++ toJson "url" ++ ": " ++ toJson url ++ "," ++ 
+    toJson "content" ++ ": " ++ jsonRenderInlines xs ++ "}}" 
+jsonRenderInline (Image xs (url, _)) = 
+    "{\"image\": {" ++ toJson "url" ++ ": " ++ toJson url ++ "," ++ 
+    toJson "alt" ++ ": " ++ jsonRenderInlines xs ++ "}}" 
 jsonRenderInline (Span xs) = 
   "{\"span\": {"
     ++ "\"content\": " ++ jsonRenderInlines xs
@@ -61,44 +58,28 @@ escapeBackslashes = concatMap escapeChar
       '\"' -> "\\\""
       _    -> [c]
 
-renderListAttributes :: ListAttributes -> String
-renderListAttributes (start, style, delim) =
-  "{"
-    ++ "\"start\": " ++ show start ++ ", "
-    ++ "\"style\": " ++ toJson (show style) ++ ", "
-    ++ "\"delimiter\": " ++ toJson (show delim)
-  ++ "}"
-
-renderDefinition :: ([Inline], [[Block]]) -> String
-renderDefinition (term, defs) =
-  "{"
-    ++ "\"term\": " ++ jsonRenderInlines term ++ ", "
-    ++ "\"definitions\": [" ++ intercalate ", " 
-        (map jsonRenderBody defs) ++ "]" ++ "}"
+-- | Render bulletlist with list of block without []
+jsonRenderList :: [Block] -> String
+jsonRenderList blocks =  intercalate ", " (map jsonRenderBlock blocks)
 
 -- | render block in json format
 jsonRenderBlock :: Block -> String
 jsonRenderBlock (Plain xs) = jsonRenderInlines xs
 jsonRenderBlock (Para xs) =  jsonRenderInlines xs
 jsonRenderBlock (CodeBlock str) = 
-  "{\"codeblock\": " ++ toJson (escapeQuotes str) ++ "}"
+  "{\"codeblock\": [" ++ toJson (escapeQuotes str) ++ "]}"
 jsonRenderBlock (RawBlock (Format f) str) = 
   "{\"rawblock\": {\"format\": " ++ toJson f ++ ", \"content\": "
     ++ toJson (escapeBackslashes str) ++ "}}"
-jsonRenderBlock (OrderedList attrs items) = 
-  "{\"orderedList\": {\"attributes\": " ++ renderListAttributes attrs ++
-    ", \"items\": [" ++ intercalate ", " (map jsonRenderBody items) ++ "]}}"
 jsonRenderBlock (BulletList items) = 
-  "{\"list\": [" ++ intercalate ", " (map jsonRenderBody items) ++ "]}"
-jsonRenderBlock (DefinitionList defs) = 
-  "{\"definitionList\": [" ++ intercalate ", "
-    (map renderDefinition defs) ++ "]}"
+  "{\"list\": [" ++ intercalate ", " (map jsonRenderList items) ++ "]}"
 jsonRenderBlock (Header _ xs) =  
     "{\"title\": " ++ jsonRenderInlines xs ++ "}"
-jsonRenderBlock (Section title content) =
+jsonRenderBlock (Section _  title content) =
     "{\"section\": {\"title\": " ++ jsonRenderInlinesQ title
     ++ ", \"content\": " ++ jsonRenderBody content ++ "}}"
 jsonRenderBlock Null = "null"
+jsonRenderBlock _ = ""
 
 -- | take inline array and generate json String arr
 inlineArToJsonArray :: [[Inline]] -> String
@@ -117,7 +98,7 @@ jsonRenderTitle (Meta title auth date) =
         dateStr   = if null date then "" else
             "\"date\": " ++ jsonRenderInlinesQ date
         parts = filter (not . null) [titleStr, authStr, dateStr]
-    in toJson "header" ++ ": {" ++ intercalate ",\n" parts ++ "\n},\n"
+    in toJson "header" ++ ": {" ++ intercalate ",\n" parts ++ "\n}"
 
 -- | render body with list of blocks
 jsonRenderBody :: [Block] -> String
@@ -126,6 +107,7 @@ jsonRenderBody blocks = "[" ++ intercalate ", "
 
 -- | Render entire Document into jsondown format
 jsonRender :: Document -> String
+jsonRender (Document meta []) = "{\n" ++ jsonRenderTitle meta ++ "}\n"
 jsonRender (Document meta blocks) = 
-   "{\n" ++ jsonRenderTitle meta ++ toJson "body" ++ ": " 
-     ++ jsonRenderBody blocks ++ "\n" ++ "}\n"
+   "{\n" ++ jsonRenderTitle meta ++ ",\n"++ toJson "body" 
+    ++ ": " ++ jsonRenderBody blocks ++ "\n}\n"
