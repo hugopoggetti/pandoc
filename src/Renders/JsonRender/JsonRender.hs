@@ -85,7 +85,7 @@ jsonRenderBlock _ = ""
 inlineArToJsonArray :: [[Inline]] -> String
 inlineArToJsonArray inlines = 
     let inlineStr = map jsonRenderInlinesQ inlines
-    in "[" ++ intercalate", " inlineStr ++ "]" 
+    in intercalate", " inlineStr
 
 -- | header generation with Meta 
 jsonRenderTitle :: Meta -> String
