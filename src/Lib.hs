@@ -82,9 +82,9 @@ parseTuple p = Parser $ \input ->
     case runParser (parseChar '(') input of
         Just (_, rest) ->
             case runParser (parseAnd p (parseChar ',')) rest of
-                Just ((result1, _), rest') -> 
+                Just ((res1, _), rest') -> 
                     case runParser (parseAnd p (parseChar ')')) rest' of
-                        Just ((result2, _), rest'') -> Just ((result1, result2), rest'')
+                        Just ((res2, _), rest'') -> Just ((res1, res2), rest'')
                         Nothing -> Nothing
                 Nothing -> Nothing
         Nothing -> Nothing
