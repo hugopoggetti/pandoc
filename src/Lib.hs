@@ -17,6 +17,7 @@ module Lib
         parseAnd,
         parseAndWith,
         parseMany,
+        parseString,
         parseSome
     ) where
 
@@ -55,6 +56,11 @@ parseChar a = Parser $ \input -> case input of
     [] -> Nothing
     (x:xs) -> if a == x then Just (x, xs) else Nothing
 
+parseString :: String -> Parser String
+parseString str = Parser $ \input ->
+    let (prefix, rest) = splitAt (length str) input
+    in if prefix == str then Just (str, rest) else Nothing
+
 parseUInt :: Parser Int
 parseUInt = Parser $ \input ->
     let (digits, rest) = span (`elem` ['0'..'9']) input
@@ -76,9 +82,9 @@ parseTuple p = Parser $ \input ->
     case runParser (parseChar '(') input of
         Just (_, rest) ->
             case runParser (parseAnd p (parseChar ',')) rest of
-                Just ((result1, _), rest') -> 
+                Just ((res1, _), rest') -> 
                     case runParser (parseAnd p (parseChar ')')) rest' of
-                        Just ((result2, _), rest'') -> Just ((result1, result2), rest'')
+                        Just ((res2, _), rest'') -> Just ((res1, res2), rest'')
                         Nothing -> Nothing
                 Nothing -> Nothing
         Nothing -> Nothing
