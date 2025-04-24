@@ -5,14 +5,14 @@
 -- Opt
 -}
 
-module OptsParserSystem (Opts(Opts), optsParser, globalOptsChecker, usage) where
+module OptsParserSystem (Opts(Opts),outputFile, outputFormat, inputFile, inputFormat, optsParser, optsToList, globalOptsChecker, usage) where
 
 data Opts = Opts {
     inputFile :: Maybe String,
     inputFormat :: Maybe String,
     outputFile :: Maybe String,
     outputFormat :: Maybe String
-}
+} deriving (Eq, Show)
 
 getNext :: Maybe Int -> [String] -> Maybe String
 getNext Nothing _ = Nothing
