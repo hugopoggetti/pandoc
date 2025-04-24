@@ -9,10 +9,13 @@ module Parsing (parsefile) where
 
 import OptsParserSystem
 import Ast.Document
+import Data.Maybe
 
 
-parsefile :: String -> Opts -> ?
-parsefile content data
-    | (inputFormat data) == "json" = 
-    | (inputFormat data) == "markdown" = 
-    | (inputFormat data) == "xml" = 
+parsefile :: String -> Opts -> IO ()
+parsefile content opts = do
+    putStrLn (fromJust (inputFormat opts))
+
+    -- | (inputFormat opts) == "json" = 
+    -- | (inputFormat opts) == "markdown" = 
+    -- | (inputFormat opts) == "xml" = 
