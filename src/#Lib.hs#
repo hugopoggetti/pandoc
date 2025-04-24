@@ -17,7 +17,6 @@ module Lib
         parseAnd,
         parseAndWith,
         parseMany,
-        parseString,
         parseSome
     ) where
 
@@ -56,10 +55,7 @@ parseChar a = Parser $ \input -> case input of
     [] -> Nothing
     (x:xs) -> if a == x then Just (x, xs) else Nothing
 
-parseString :: String -> Parser String
-parseString str = Parser $ \input ->
-    let (prefix, rest) = splitAt (length str) input
-    in if prefix == str then Just (str, rest) else Nothing
+
 
 parseUInt :: Parser Int
 parseUInt = Parser $ \input ->
