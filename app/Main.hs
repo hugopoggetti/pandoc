@@ -26,6 +26,7 @@ import System.Environment (getArgs)
 import System.Exit
 import System.IO
 import Text.Read (get)
+import Ast.Document
 import Data.Maybe (fromJust, isNothing)
 import Parsing
 --import Debug.Trace
@@ -73,7 +74,7 @@ readthefile path = do
     hGetContents fileHandle
 
 validInput :: Opts -> Bool
-validInput opts = if fromJust(inputFormat opts) == getFileExtension
+validInput opts = if fromJust (inputFormat opts) == getFileExtension
     (fromJust (inputFile opts)) then True else False
 
 start :: [String] -> Opts -> IO ()
@@ -83,8 +84,8 @@ start args opts
     | otherwise = do
         filecontent <- readthefile (fromJust (inputFile opts))
         if isNothing (inputFormat opts) || (validInput opts) == False then
-            putStrLn usage >> exitWith (ExitFailure 84)
-            else parsefile filecontent (checkoptionnal opts)
+            putStrLn usage >> exitWith (ExitFailure 84) else parsefile 
+            filecontent newdoc (checkoptionnal opts)
 
 main :: IO ()
 main = do
