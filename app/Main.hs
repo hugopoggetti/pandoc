@@ -7,6 +7,18 @@
 
 module Main (main) where
 
+import Lib (Parser, runParser,
+        parseChar,
+        parseUInt,
+        parseInt,
+        parseTuple,
+        parseAnyChar,
+        parseOr,
+        parseAnd,
+        parseAndWith,
+        parseMany,
+        parseSome)
+import Control.Applicative ((<|>), (<*>))
 import OptsParserSystem
 
 import System.Environment (getArgs)
