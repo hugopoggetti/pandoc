@@ -85,15 +85,13 @@ The `Block` type represents top-level content structures:
 data Block
   = Plain [Inline]                             -- ^ Plain text, no paragraph tag
   | Para [Inline]                              -- ^ A paragraph
-  | CodeBlock Attr String                      -- ^ A block of code with attributes
+  | CodeBlock String                           -- ^ A block of code with attributes
   | RawBlock Format String                     -- ^ Raw content (HTML, LaTeX, etc.)
-  | BlockQuote [Block]                         -- ^ Block quote
   | OrderedList ListAttributes [[Block]]       -- ^ Ordered list (1., 2., 3., ...)
   | BulletList [[Block]]                       -- ^ Unordered list (*, -, etc.)
   | DefinitionList [([Inline], [[Block]])]     -- ^ List of terms and definitions
-  | Header Int Attr [Inline]                   -- ^ A header (level, attrs, content)
-  | HorizontalRule                             -- ^ Horizontal line (---)
-  | Div Attr [Block]                           -- ^ A generic container with attributes
+  | Header Int [Inline]                        -- ^ A header (level, attrs, content) optional a list of block to create section
+  | Section Int [Inline] [Block]               -- ^ A section with an inline header and a list of other section in the current section
   | Null                                       -- ^ No content (empty block)
   deriving (Show, Eq)
 ```
@@ -108,60 +106,16 @@ data Inline
   = Str String                                 -- ^ Text string
   | Emph [Inline]                              -- ^ Emphasized text (italic)
   | Strong [Inline]                            -- ^ Strongly emphasized (bold)
-  | Strikeout [Inline]                         -- ^ Strikethrough
-  | Superscript [Inline]                       -- ^ Superscript text
-  | Subscript [Inline]                         -- ^ Subscript text
-  | SmallCaps [Inline]                         -- ^ Small caps text
-  | Quoted QuoteType [Inline]                  -- ^ Quoted text
-  | Cite [Citation] [Inline]                   -- ^ Citation with bibliography reference
-  | Code Attr String                           -- ^ Inline code
-  | Space                                      -- ^ Space between words
-  | SoftBreak                                  -- ^ Soft line break (no new paragraph)
-  | LineBreak                                  -- ^ Hard line break (new line)
-  | Math MathType String                       -- ^ Math content
+  | Code String                                -- ^ Inline code
   | RawInline Format String                    -- ^ Raw inline content
-  | Link Attr [Inline] Target                  -- ^ Hyperlink (text + target)
-  | Image Attr [Inline] Target                 -- ^ Image (alt text + target)
+  | Link [Inline] Target                       -- ^ Hyperlink (text + target)
+  | Image [Inline] Target                      -- ^ Image (alt text + target)
   | Note [Block]                               -- ^ Footnote
-  | Span Attr [Inline]                         -- ^ Inline container with attributes
+  | Span [Inline]                              -- ^ Inline container with attributes
   deriving (Show, Eq)
 ```
 This flexible design allows fine-grained styling and semantic annotation of textual content, 
 supporting everything from simple strings to complex nested formatting.
-
-### Citation
-
-Citations are represented using the `Citation` type. 
-This structure allows for flexible citation styles, prefixes/suffixes, and disambiguation using hashes.
-
-```haskell
-data Citation = Citation
-  { citationId      :: String         -- ^ Reference identifier (e.g., "Doe2023")
-  , citationPrefix  :: [Inline]       -- ^ Text before the citation (e.g., "see")
-  , citationSuffix  :: [Inline]       -- ^ Text after the citation (e.g., "for details")
-  , citationMode    :: CitationMode   -- ^ Citation display mode
-  , citationNoteNum :: Int            -- ^ Footnote number (for notes)
-  , citationHash    :: Int            -- ^ Internal hash for disambiguation
-  } deriving (Show, Eq)
-```
-
-Citation modes are described by:
-```haskell
-data CitationMode
-  = AuthorInText        -- ^ Author name appears in text
-  | SuppressAuthor      -- ^ Citation without showing author
-  | NormalCitation      -- ^ Standard citation style (author + date, etc.)
-  deriving (Show, Eq, Ord, Read)
-```
-
-### Attributes (`Attr`)
-Many elements (such as `CodeBlock`, `Span`, `Div`, `Header`) support custom attributes for styling and identification.
-```haskell
-type Attr = (String, [String], [(String, String)])
-```
-- `String`: Element identifier (e.g., "my-id")
-- `[String]`: List of classes (e.g., ["highlight"])
-- `[(String, String)]`: Key-value attributes (e.g., [("lang", "haskell")])
 
 ### Targets for Links and Images
 Links and images both use the `Target` type to define where they point:
@@ -169,15 +123,6 @@ Links and images both use the `Target` type to define where they point:
 type Target = (String, String)  -- (URL, title/tooltip)
 ```
 exmple: ```("https://example.com", "Click here")```
-
-### Quote Type
-
-Specifies the kind of quotation marks to use:
-
-```haskell
-data QuoteType = SingleQuote | DoubleQuote
-  deriving (Show, Eq)
-```
 
 ### List Attributes
 
@@ -201,3 +146,4 @@ newtype Format = Format String
 ---
 ## Parsing
 ...
+
