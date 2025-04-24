@@ -9,12 +9,7 @@ module Ast.Document ( Document(Document)
                 , Meta(..)
                 , Block(..)
                 , Inline(..)
-                , Citation(..)
-                , CitationMode(..)
-                , Attr
                 , Target
-                , QuoteType(..)
-                , MathType(..)
                 , Format(..)
                 , ListAttributes
                 , ListNumberDelim(..)
@@ -36,15 +31,13 @@ data Meta = Meta
 data Block
   = Plain [Inline]                             -- ^ Plain text, no paragraph tag
   | Para [Inline]                              -- ^ A paragraph
-  | CodeBlock Attr String                      -- ^ A block of code with attributes
+  | CodeBlock String                           -- ^ A block of code with attributes
   | RawBlock Format String                     -- ^ Raw content (HTML, LaTeX, etc.)
-  | BlockQuote [Block]                         -- ^ Block quote
   | OrderedList ListAttributes [[Block]]       -- ^ Ordered list (1., 2., 3., ...)
   | BulletList [[Block]]                       -- ^ Unordered list (*, -, etc.)
   | DefinitionList [([Inline], [[Block]])]     -- ^ List of terms and definitions
-  | Header Int Attr [Inline]                   -- ^ A header (level, attrs, content)
-  | HorizontalRule                             -- ^ Horizontal line (---)
-  | Div Attr [Block]                           -- ^ A generic container with attributes
+  | Header Int [Inline]                        -- ^ A header (level, attrs, content) optional a list of block to create section
+  | Section [Inline] [Block]                   -- ^ A section with an inline header and a list of other section
   | Null                                       -- ^ No content (empty block)
   deriving (Show, Eq)
 
@@ -53,51 +46,16 @@ data Inline
   = Str String                                 -- ^ Text string
   | Emph [Inline]                              -- ^ Emphasized text (italic)
   | Strong [Inline]                            -- ^ Strongly emphasized (bold)
-  | Strikeout [Inline]                         -- ^ Strikethrough
-  | Superscript [Inline]                       -- ^ Superscript text
-  | Subscript [Inline]                         -- ^ Subscript text
-  | SmallCaps [Inline]                         -- ^ Small caps text
-  | Quoted QuoteType [Inline]                  -- ^ Quoted text
-  | Cite [Citation] [Inline]                   -- ^ Citation with bibliography reference
-  | Code Attr String                           -- ^ Inline code
-  | Space                                      -- ^ Space between words
-  | SoftBreak                                  -- ^ Soft line break (no new paragraph)
-  | LineBreak                                  -- ^ Hard line break (new line)
-  | Math MathType String                       -- ^ Math content
+  | Code String                                -- ^ Inline code
   | RawInline Format String                    -- ^ Raw inline content
-  | Link Attr [Inline] Target                  -- ^ Hyperlink (text + target)
-  | Image Attr [Inline] Target                 -- ^ Image (alt text + target)
+  | Link [Inline] Target                       -- ^ Hyperlink (text + target)
+  | Image [Inline] Target                      -- ^ Image (alt text + target)
   | Note [Block]                               -- ^ Footnote
-  | Span Attr [Inline]                         -- ^ Inline container with attributes
+  | Span [Inline]                              -- ^ Inline container with attributes
   deriving (Show, Eq)
-
--- | Citation 
-data Citation = Citation { citationId      :: String
-                         , citationPrefix  :: [Inline]
-                         , citationSuffix  :: [Inline]
-                         , citationMode    :: CitationMode
-                         , citationNoteNum :: Int
-                         , citationHash    :: Int
-                         }
-                deriving (Show, Eq)
-
-data CitationMode = AuthorInText | SuppressAuthor | NormalCitation
-                    deriving (Show, Eq, Ord, Read)
-
--- | Common attributes used in code, divs, spans, etc.
--- (identifier, list of classes, key-value attributes)
-type Attr = (String, [String], [(String, String)])
 
 -- | Target for links or images: (URL, title/tooltip)
 type Target = (String, String)
-
--- | Quotation style
-data QuoteType = SingleQuote | DoubleQuote
-  deriving (Show, Eq)
-
--- | Whether math is inline or displayed
-data MathType = DisplayMath | InlineMath
-  deriving (Show, Eq)
 
 -- | Format specifier (e.g. "html", "latex")
 newtype Format = Format String
