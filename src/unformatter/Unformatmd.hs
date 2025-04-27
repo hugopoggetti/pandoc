@@ -8,16 +8,12 @@
 
 module Unformatter.Unformatmd () where
 
-import Ast.Document
-import Data.Maybe
-import Utils
-
 data Mdcutter = Mdcutter {
     meta       :: String,
     mTitle     :: String,
     mAuthor    :: String,
     mDate      :: String,
-    header     :: Int -> String,
+    --header     :: Int -> String,
     bold       :: String -> String,
     italic     :: String -> String,
     code       :: String -> String,
@@ -33,7 +29,7 @@ mdcutterDefault = Mdcutter {
     mTitle = "title:",
     mAuthor = "author:",
     mDate = "date:",
-    header = \n -> if n >= 1 && n <= 6 then replicate n '#' else error "Invalid header level",
+    --header = \n -> if n >= 1 && n <= 6 then replicate n '#' else error "Invalid header level",
     bold = \txt -> "**" ++ txt ++ "**",
     italic = \txt -> "*" ++ txt ++ "*",
     code = \txt -> "`" ++ txt ++ "`",

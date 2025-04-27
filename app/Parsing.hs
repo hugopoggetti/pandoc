@@ -4,13 +4,13 @@
 -- File description:
 -- Main
 -}
+{-# OPTIONS_GHC -Wno-unused-matches #-}
 
 module Parsing (parsefile) where
 
 import OptsParserSystem
 import Ast.Document
 import Data.Maybe
-import Utils
 
 parsefile :: String -> Document -> Opts -> IO ()
 parsefile content (Document meta blocks) opts = do

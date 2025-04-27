@@ -8,10 +8,6 @@
 
 module Unformatter.Unformatxml () where
 
-import Ast.Document
-import Data.Maybe
-import Utils
-
 data Xmlcutter = Xmlcutter {
     tagWrap       :: String -> String -> String,
    -- attribute     :: (String, String) -> String,

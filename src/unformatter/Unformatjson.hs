@@ -4,12 +4,10 @@
 -- File description:
 -- Main
 -}
+{-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
 module Unformatter.Unformatjson () where
  
-import Ast.Document
-import Data.Maybe
-import Data.Char (isSpace, isDigit, isAlpha)
 import Utils
 
 data Jsoncutter = Jsoncutter {
