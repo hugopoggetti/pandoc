@@ -32,6 +32,9 @@ library
       Renders.JsonRender.JsonRender
       Renders.XmlRender.XmlRender
       Renders.DebugRender.DebugRender
+      Unformatter.Unformatjson
+      Unformatter.Unformatxml
+      Unformatter.Unformatmd
   other-modules:
       Paths_mypandoc
   autogen-modules:

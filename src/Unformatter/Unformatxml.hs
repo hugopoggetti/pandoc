@@ -6,7 +6,9 @@
 -}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Unformatter.Unformatxml () where
+module Unformatter.Unformatxml (parsexml) where
+
+import Ast.Document (Document)
 
 data Xmlcutter = Xmlcutter {
     tagWrap       :: String -> String -> String,
@@ -32,3 +34,6 @@ xmlCutterDefault = Xmlcutter {
     linkXml = \(text, url) -> "<a href=\"" ++ url ++ "\">" ++ text ++ "</a>",
     imageXml = \(alt, src) -> "<img alt=\"" ++ alt ++ "\" src=\"" ++ src ++ "\" />"
 }
+
+parsexml :: String -> Document -> Document
+parsexml file newdoc = newdoc

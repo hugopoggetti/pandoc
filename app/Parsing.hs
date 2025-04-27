@@ -11,14 +11,20 @@ module Parsing (parsefile) where
 import OptsParserSystem
 import Ast.Document
 import Data.Maybe
+import Unformatter.Unformatjson
+import Renders.MarkdownRender.MarkdownRender (markdownRender)
+import Renders.JsonRender.JsonRender (jsonRender)
+import Renders.XmlRender.XmlRender (xmlRender)
+import System.Exit
+import Unformatter.Unformatxml (parsexml)
+import Unformatter.Unformatmd (parsemd)
 
-parsefile :: String -> Document -> Opts -> IO ()
-parsefile content (Document meta blocks) opts = do
-    putStrLn (fromJust (inputFormat opts)) 
-
-    -- | (inputFormat opts) == "json" = 
-    -- | (inputFormat opts) == "markdown" = 
-    -- | (inputFormat opts) == "xml" = 
+parsefile :: String -> Opts -> IO ()
+parsefile content opts
+    | fromJust(outputFormat opts) == "json" = putStrLn (jsonRender (parseJson content newdoc))
+    | fromJust(outputFormat opts) == "markdown" = putStrLn (markdownRender (parsemd content newdoc))
+    | fromJust(outputFormat opts) == "xml" = putStrLn (xmlRender (parsexml content newdoc))
+    | otherwise = putStrLn "ther's error" >> exitWith (ExitFailure 84)
 
 --   -
 --   {}

@@ -145,7 +145,10 @@ readthefile path = do
     hGetContents fileHandle
 
 validInput :: Opts -> Bool
-validInput opts = if fromJust (inputFormat opts) == getFileExtension
+validInput opts
+    | inputFormat opts == Nothing = validInput (opts {inputFormat =
+        Just(getFileExtension (fromJust (inputFile opts)))})
+    | otherwise = if fromJust (inputFormat opts) == getFileExtension
     (fromJust (inputFile opts)) then True else False
 
 start :: [String] -> Opts -> IO ()
@@ -154,9 +157,9 @@ start args opts
         putStrLn usage >> exitWith (ExitFailure 84)
     | otherwise = do
         filecontent <- readthefile (fromJust (inputFile opts))
-        if isNothing (inputFormat opts) || (validInput opts) == False then
+        if (validInput opts) == False then 
             putStrLn usage >> exitWith (ExitFailure 84) else parsefile 
-            filecontent newdoc (checkoptionnal opts)
+            filecontent (checkoptionnal opts)
 
 main :: IO ()
 main = do

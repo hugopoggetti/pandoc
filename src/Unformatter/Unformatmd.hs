@@ -6,7 +6,9 @@
 -}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Unformatter.Unformatmd () where
+module Unformatter.Unformatmd (parsemd) where
+
+import Ast.Document (Document)
 
 data Mdcutter = Mdcutter {
     meta       :: String,
@@ -38,3 +40,6 @@ mdcutterDefault = Mdcutter {
     link = \(text, url) -> "[" ++ text ++ "](" ++ url ++ ")",
     image = \(alt, src) -> "![" ++ alt ++ "](" ++ src ++ ")"
 }
+
+parsemd :: String -> Document -> Document
+parsemd file newdoc = newdoc

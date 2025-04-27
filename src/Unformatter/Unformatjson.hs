@@ -6,9 +6,10 @@
 -}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Unformatter.Unformatjson () where
- 
+module Unformatter.Unformatjson (parseJson) where
+
 import Utils
+import Ast.Document (Document)
 
 data Jsoncutter = Jsoncutter {
     stringWrap  :: String -> String,
@@ -64,3 +65,5 @@ jsonelementdefault = Jsonelement {
     codeblock = "\"codeblock\":"
 }
 
+parseJson :: String -> Document -> Document
+parseJson file newdoc = newdoc
