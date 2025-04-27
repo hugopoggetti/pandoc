@@ -31,6 +31,7 @@ library
       Renders.MarkdownRender.MarkdownRender
       Renders.JsonRender.JsonRender
       Renders.XmlRender.XmlRender
+      Renders.DebugRender.DebugRender
   other-modules:
       Paths_mypandoc
   autogen-modules:
