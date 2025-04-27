@@ -14,6 +14,7 @@ module Ast.Document ( Document(Document)
                 , ListAttributes
                 , ListNumberDelim(..)
                 , ListNumberStyle(..)
+                , newdoc
                 ) where
 
 -- | Represents a complete document with metadata and content blocks.
@@ -74,3 +75,13 @@ data ListNumberStyle
 data ListNumberDelim
   = DefaultDelim | Period | OneParen | TwoParens
   deriving (Show, Eq)
+
+newdoc :: Document
+newdoc = Document meta blocks
+  where
+    meta = Meta
+      { metaTitle = []
+      , metaAuthors = [] 
+      , metaDate = []
+      }
+    blocks = []
