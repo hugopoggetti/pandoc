@@ -28,14 +28,9 @@ import System.IO
 import Text.Read (get)
 import Ast.Document
 import Data.Maybe (fromJust, isNothing)
+import Utils
 import Parsing
 --import Debug.Trace
-
-splitOn :: Eq a => a -> [a] -> [[a]]
-splitOn _ [] = []
-splitOn delimiter s = case break (== delimiter) s of
-    (h, []) -> [h]
-    (h, t)  -> h : splitOn delimiter (drop 1 t)
 
 getFileExtension :: String -> String
 getFileExtension fname = last (splitOn '.' fname)
