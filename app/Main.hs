@@ -33,7 +33,6 @@ import Ast.Document
 import Data.Maybe (fromJust, isNothing)
 import Utils
 import Parsing
---import Debug.Trace
 
 -- exampleDoc :: Document
 -- exampleDoc = Document

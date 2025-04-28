@@ -19,11 +19,19 @@ import System.Exit
 import Unformatter.Unformatxml (parsexml)
 import Unformatter.Unformatmd (parsemd)
 
+getinputfile :: String -> Opts -> Document
+getinputfile content opts
+    | fromJust (inputFormat opts) == "json" = parseJson content newdoc
+    | fromJust (inputFormat opts) == "markdown" = parsemd content newdoc
+    | fromJust (inputFormat opts) == "xml" = parsexml content newdoc
+    | otherwise = newdoc
+
+
 parsefile :: String -> Opts -> IO ()
 parsefile content opts
-    | fromJust(outputFormat opts) == "json" = putStrLn (jsonRender (parseJson content newdoc))
-    | fromJust(outputFormat opts) == "markdown" = putStrLn (markdownRender (parsemd content newdoc))
-    | fromJust(outputFormat opts) == "xml" = putStrLn (xmlRender (parsexml content newdoc))
+    | fromJust (outputFormat opts) == "json" = putStrLn (jsonRender (getinputfile content opts))
+    | fromJust (outputFormat opts) == "markdown" = putStrLn (markdownRender (getinputfile content opts))
+    | fromJust (outputFormat opts) == "xml" = putStrLn (xmlRender (getinputfile content opts))
     | otherwise = putStrLn "ther's error" >> exitWith (ExitFailure 84)
 
 --   -

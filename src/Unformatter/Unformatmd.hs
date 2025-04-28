@@ -9,6 +9,8 @@
 module Unformatter.Unformatmd (parsemd) where
 
 import Ast.Document (Document)
+import Utils
+import Debug.Trace
 
 data Mdcutter = Mdcutter {
     meta       :: String,

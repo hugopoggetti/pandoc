@@ -9,6 +9,8 @@
 module Unformatter.Unformatxml (parsexml) where
 
 import Ast.Document (Document)
+import Utils
+import Debug.Trace
 
 data Xmlcutter = Xmlcutter {
     tagWrap       :: String -> String -> String,
@@ -36,4 +38,4 @@ xmlCutterDefault = Xmlcutter {
 }
 
 parsexml :: String -> Document -> Document
-parsexml file newdoc = newdoc
+parsexml file = trace ("the file: " ++ show file)
