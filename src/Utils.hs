@@ -13,6 +13,12 @@ splitOn delimiter s = case break (== delimiter) s of
     (h, []) -> [h]
     (h, t)  -> h : splitOn delimiter (drop 1 t)
 
+splitOne :: Eq a => a -> [a] -> [[a]]
+splitOne _ [] = []
+splitOne delimiter s = case break (== delimiter) s of
+    (h, []) -> [h]
+    (h, t)  -> h : [drop 1 t]
+
 joinWithComma :: [String] -> String
 joinWithComma [] = ""
 joinWithComma [x] = x
