@@ -13,6 +13,7 @@ import Ast.Document (Document(..), Meta (..), newdoc, Inline (..))
 import Lib (Parser(runParser), parseString)
 import Utils
 import Data.Maybe (fromJust)
+import Debug.Trace
 
 data Xmlcutter = Xmlcutter {
    header :: [String],
@@ -26,27 +27,25 @@ xmlCutterDefault = Xmlcutter {
    "<code>", "<codeblock>", "<list>", "<link url=", "<image url="]
 }
 
-parseauthor :: String -> (String, Maybe String)
-parseauthor file =
+parsedate :: String -> (String, Maybe String)
+parsedate file =
    case runParser (parseString "<date>") file of
     Just (_, rest) ->
-      let dateParts = splitOn '<' rest
-          date=if not (null dateParts)then head dateParts else "Nothing"
+      let dateParts = splitOne '<' rest
+          date = head dateParts
       in case runParser (parseString "</date>\n") ("<"++last dateParts) of
-         Just (_, rest) ->if date == "Nothing" then (rest, Nothing)
-            else (rest, Just date)
+         Just (_, rest) -> (removeLeadingSpaces rest, Just date)
          Nothing -> (rest, Nothing)
     Nothing -> (file, Nothing)
 
-parsedate :: String -> (String, Maybe String)
-parsedate file =
+parseauthor :: String -> (String, Maybe String)
+parseauthor file =
    case runParser (parseString "<author>") file of
     Just (_, rest) ->
-      let authParts = splitOn '<' rest
-          auth=if not (null authParts)then head authParts else "Nothing"
+      let authParts = splitOne '<' rest
+          auth = head authParts
       in case runParser (parseString "</author>\n") ("<"++last authParts) of
-         Just (_, rest) -> if auth == "Nothing" then (rest, Nothing)
-            else (rest, Just auth)
+         Just (_, rest) -> (removeLeadingSpaces rest, Just auth)
          Nothing -> (rest, Nothing)
     Nothing -> (file, Nothing)
 
@@ -54,9 +53,10 @@ getDateAndAuth :: String -> (String, Maybe String, Maybe String)
 getDateAndAuth file =
    case runParser (parseString ">\n") file of
       Just (_, rest) ->
-         let (afile, auth) = parseauthor rest
+         let (afile, auth) = parseauthor (removeLeadingSpaces rest)
              (dfile, date) = parsedate afile
-         in case runParser (parseString "</header>\n") file of
+         in case runParser (parseString "</header>\n")
+         (removeLeadingSpaces dfile) of
             Just (_, rest) -> (rest, auth, date)
             Nothing -> (file, Nothing, Nothing)
       Nothing -> (file, Nothing, Nothing)
@@ -66,12 +66,11 @@ parseheader :: String -> (String, Maybe String, Maybe String, Maybe String)
 parseheader file =
   case runParser (parseString "<header title=\"") file of
     Just (_, rest) ->
-      let titleParts = splitOn '\"' rest
-          title=if not(null titleParts)then head titleParts++"\""else"Nothing"
+      let titleParts = splitOne '\"' rest
+          title= head titleParts
       in  
          let (headerless, auth, date) = getDateAndAuth (last titleParts)
-         in if title == "Nothing" then (headerless, Nothing, auth, date)
-            else (headerless, Just title, auth, date)
+         in (headerless, Just title, auth, date)
     Nothing -> ("", Nothing, Nothing, Nothing)
 
 getheader :: (String, Document) -> (String, Document)
@@ -87,8 +86,8 @@ getheader (file, newfile) =
 
 getroot :: (String, Document) -> (String, Document)
 getroot (file, newfile) =
-   case runParser (parseString "<document/>\n") file of
-      Just (_, rest) -> (rest, newfile)
+   case runParser (parseString "<document>\n") file of
+      Just (_, rest) -> (removeLeadingSpaces rest, newfile)
       Nothing -> (file, newfile)
 
 parsingxml :: (String, Document) -> Document
@@ -99,7 +98,3 @@ parsingxml (file, newfile) = head
 
 parsexml :: String -> Document -> Document
 parsexml file newfile = parsingxml (file, newfile)
-    -- case runParser (parseChar '<') file of
-    --     Just (result, rest) -> trace ("Parsed character: " ++ show result ++ ", remaining string: " ++ rest)
-    --     Nothing -> trace "Failed to parse input"
-    --trace ("the file: " ++ show )--(getXmlTagContent "author" file))

@@ -5,7 +5,7 @@
 -- Main
 -}
 
-module Utils (splitOne, splitOn, joinWithComma) where
+module Utils (splitOne, splitOn, joinWithComma, removeLeadingSpaces) where
 
 splitOn :: Eq a => a -> [a] -> [[a]]
 splitOn _ [] = []
@@ -23,3 +23,6 @@ joinWithComma :: [String] -> String
 joinWithComma [] = ""
 joinWithComma [x] = x
 joinWithComma (x:xs) = x ++ "," ++ joinWithComma xs
+
+removeLeadingSpaces :: String -> String
+removeLeadingSpaces = dropWhile (== ' ')
