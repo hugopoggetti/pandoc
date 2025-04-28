@@ -5,7 +5,7 @@
 -- Main
 -}
 
-module Utils (splitOn, joinWithComma) where
+module Utils (splitOne, splitOn, joinWithComma) where
 
 splitOn :: Eq a => a -> [a] -> [[a]]
 splitOn _ [] = []

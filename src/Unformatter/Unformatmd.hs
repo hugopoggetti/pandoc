@@ -8,12 +8,13 @@
 
 module Unformatter.Unformatmd (parsemd) where
 
-import Ast.Document (Document)
-import Utils
+import Ast.Document (Document(..), Meta(..), Inline(..))
+import Lib (Parser, runParser, parseChar, parseString, parseOr, parseAnd, parseMany, parseSome)
 import Debug.Trace
+import Utils (splitOne, joinWithComma)
 
 data Mdcutter = Mdcutter {
-    meta       :: String,
+    mdmeta       :: String,
     mTitle     :: String,
     mAuthor    :: String,
     mDate      :: String,
@@ -29,19 +30,61 @@ data Mdcutter = Mdcutter {
 
 mdcutterDefault :: Mdcutter
 mdcutterDefault = Mdcutter {
-    meta = "---",
+    mdmeta = "---",
     mTitle = "title:",
     mAuthor = "author:",
     mDate = "date:",
-    --header = \n -> if n >= 1 && n <= 6 then replicate n '#' else error "Invalid header level",
-    bold = \txt -> "**" ++ txt ++ "**",
-    italic = \txt -> "*" ++ txt ++ "*",
-    code = \txt -> "`" ++ txt ++ "`",
-    codeblock = \txt -> "```" ++ "\n" ++ txt ++ "\n```",
-    list = \item -> "- " ++ item,
+    --mheader = "#header",
+    bold = \text -> "**" ++ text ++ "**",
+    italic = \text -> "*" ++ text ++ "*",
+    code = \text -> "`" ++ text ++ "`",
+    codeblock = \text -> "```" ++ text ++ "```",
+    list = \text -> "- " ++ text,
     link = \(text, url) -> "[" ++ text ++ "](" ++ url ++ ")",
     image = \(alt, src) -> "![" ++ alt ++ "](" ++ src ++ ")"
 }
 
+
 parsemd :: String -> Document -> Document
-parsemd file newdoc = newdoc
+parsemd file doc =
+    let (mdmeta, rest) = case runParser (parseString "---\n") file of
+            Just (res, rest) -> (res, rest)
+            Nothing -> error "Failed to parse metadata"
+        (title, rest2) = parseTitle rest
+        (author, rest3) = parseAuthor rest2
+        (date, _) = parseDate rest3
+        newMeta = Meta {
+            metaTitle = [Str title],
+            metaAuthors = [[Str author]],
+            metaDate = [Str date]
+        }
+    in Document newMeta (case doc of Document _ blocks -> blocks)
+
+
+parseTitle :: String -> (String , String)
+parseTitle rest = 
+    case runParser (parseString "title:") rest of
+        Just (res, rest) ->
+            let suce = splitOne '\n' rest
+            in (head suce, last suce)
+        Nothing -> error "Failed to parse title"
+
+
+parseAuthor :: String -> (String , String)
+parseAuthor rest = 
+    --trace rest $
+    case runParser (parseString "author:") rest of
+        Just (res, rest) ->
+            let suce = splitOne '\n' rest
+             in (head suce, last suce)
+        Nothing -> error "Failed to parse author"
+
+parseDate :: String -> (String , String)
+parseDate rest = 
+    case runParser (parseString "date:") rest of
+        Just (res, rest) ->
+            let suce = splitOne '\n' rest
+            in (head suce, last suce)
+        Nothing -> error "Failed to parse date"
+
+
