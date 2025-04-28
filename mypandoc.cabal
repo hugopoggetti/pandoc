@@ -26,10 +26,15 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Utils
       Ast.Document
       Renders.MarkdownRender.MarkdownRender
       Renders.JsonRender.JsonRender
       Renders.XmlRender.XmlRender
+      Renders.DebugRender.DebugRender
+      Unformatter.Unformatjson
+      Unformatter.Unformatxml
+      Unformatter.Unformatmd
   other-modules:
       Paths_mypandoc
   autogen-modules:

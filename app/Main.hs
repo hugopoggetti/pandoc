@@ -8,6 +8,9 @@
 
 module Main (main) where
 
+import Renders.MarkdownRender.MarkdownRender (markdownRender)
+import Renders.JsonRender.JsonRender (jsonRender)
+import Renders.XmlRender.XmlRender (xmlRender)
 import Lib (Parser, runParser,
         parseChar,
         parseUInt,
@@ -26,15 +29,83 @@ import System.Environment (getArgs)
 import System.Exit
 import System.IO
 import Text.Read (get)
+import Ast.Document
 import Data.Maybe (fromJust, isNothing)
+import Utils
 import Parsing
---import Debug.Trace
 
-splitOn :: Eq a => a -> [a] -> [[a]]
-splitOn _ [] = []
-splitOn delimiter s = case break (== delimiter) s of
-    (h, []) -> [h]
-    (h, t)  -> h : splitOn delimiter (drop 1 t)
+-- exampleDoc :: Document
+-- exampleDoc = Document
+--   (Meta
+--     [Str "Syntaxe JSON"]
+--     [[Str "Fornes Leo"]]
+--     [Str "2024-01-01"]
+--   )
+--   [ Para [Str "This document is a simple example of the JSON syntax."]
+--   , Para [Str "Every syntax element is displayed in this document."]
+--   , Section 1
+--       [Str "header 1"] 
+--       [ Para [Str "This is a basic paragraph with text."]
+--       , Para
+--           [ Str "This is a paragraph with "
+--           , Strong [Str "bold"]
+--           , Str ", "
+--           , Emph [Str "italic"]
+--           , Str " and "
+--           , Code "code"
+--           , Str " text."
+--           ]
+--       , Section 2
+--           [Str "header 2"]
+--           [ CodeBlock "This is a code block."
+--           , BulletList
+--               [ [Para [Str "list item 1"]]
+--               , [Para [Str "list item 2"]]
+--               , [Para [Str "list item 3"]]
+--               ]
+--           , Para
+--               [ Str "This is a paragraph with a "
+--               , Link [Str "link"]
+--                   ("https://www.youtube.com/watch?v=dQw4w9WgXcQ&ab_channel=RickAstley", "")
+--               , Str "."
+--               ]
+--           , Para
+--               [ Str "This is a paragraph with an image "
+--               , Image [Str "Text to replace image"]
+--                   ("https://cdn-images-1.medium.com/max/697/1*tsHrUKwQXG1YZX0l957ISw.png", "")
+--               , Str "."
+--               ]
+--           , Section 3
+--               []
+--               [ Section 4
+--                   [Str "header 4"]
+--                   [ Para [Str "Every syntax element can be use separately or combined."]
+--                   , Para [Str "Think about the different possible combinations."]
+--                   , Para [Str "All combined syntax elements aren't displayed in this document."]
+--                   ]
+--               ]
+--           ]
+--       ]
+--   ]
+
+-- main :: IO ()
+-- main = do
+--     putStrLn $ replicate 50 '-'
+--     putStrLn "Markdown"
+--     putStrLn $ replicate 50 '-'
+--     putStrLn $ markdownRender exampleDoc
+--     putStrLn $ replicate 50 '-'
+--     putStrLn "JSON"
+--     putStrLn $ replicate 50 '-'
+--     putStrLn $ jsonRender exampleDoc
+--     putStrLn $ replicate 50 '-'
+--     putStrLn "XML"
+--     putStrLn $ replicate 50 '-'
+--     putStrLn $ xmlRender exampleDoc
+--     putStrLn $ replicate 50 '-'
+--     putStrLn "DEBUG"
+--     putStrLn $ replicate 50 '-'
+--     putStrLn $ debugRender exampleDoc
 
 getFileExtension :: String -> String
 getFileExtension fname = last (splitOn '.' fname)
@@ -73,7 +144,10 @@ readthefile path = do
     hGetContents fileHandle
 
 validInput :: Opts -> Bool
-validInput opts = if fromJust(inputFormat opts) == getFileExtension
+validInput opts
+    | inputFormat opts == Nothing = validInput (opts {inputFormat =
+        Just(getFileExtension (fromJust (inputFile opts)))})
+    | otherwise = if fromJust (inputFormat opts) == getFileExtension
     (fromJust (inputFile opts)) then True else False
 
 start :: [String] -> Opts -> IO ()
@@ -82,9 +156,9 @@ start args opts
         putStrLn usage >> exitWith (ExitFailure 84)
     | otherwise = do
         filecontent <- readthefile (fromJust (inputFile opts))
-        if isNothing (inputFormat opts) || (validInput opts) == False then
-            putStrLn usage >> exitWith (ExitFailure 84)
-            else parsefile filecontent (checkoptionnal opts)
+        if (validInput opts) == False then 
+            putStrLn usage >> exitWith (ExitFailure 84) else parsefile 
+            filecontent (checkoptionnal opts)
 
 main :: IO ()
 main = do

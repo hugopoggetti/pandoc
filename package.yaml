@@ -41,6 +41,7 @@ library:
     - Renders.MarkdownRender.MarkdownRender
     - Renders.JsonRender.JsonRender
     - Renders.XmlRender.XmlRender
+    - Renders.DebugRender.DebugRender
 
 executables:
   mypandoc-exe:
