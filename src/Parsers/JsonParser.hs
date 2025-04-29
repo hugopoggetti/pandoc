@@ -65,5 +65,5 @@ jsonelementdefault = Jsonelement {
     codeblock = "\"codeblock\":"
 }
 
-parseJson :: String -> Document -> Document
-parseJson file newdoc = newdoc
+parseJson :: String -> Document -> Maybe Document
+parseJson file newdoc = Just newdoc

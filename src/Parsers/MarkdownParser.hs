@@ -45,7 +45,7 @@ mdcutterDefault = Mdcutter {
 }
 
 
-parsemd :: String -> Document -> Document
+parsemd :: String -> Document -> Maybe Document
 parsemd file doc =
     let (mdmeta, rest) = case runParser (parseString "---\n") file of
             Just (res, rest) -> (res, rest)
@@ -58,7 +58,7 @@ parsemd file doc =
             metaAuthors = [[Str author]],
             metaDate = [Str date]
         }
-    in Document newMeta (case doc of Document _ blocks -> blocks)
+    in Just (Document newMeta (case doc of Document _ blocks -> blocks))
 
 
 parseTitle :: String -> (String , String)

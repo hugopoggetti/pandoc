@@ -18,21 +18,23 @@ import System.Exit
 import Parsers.JsonParser (parseJson)
 import Parsers.XmlParser (parsexml)
 import Parsers.MarkdownParser (parsemd)
+import Data.Maybe (Maybe (Nothing), fromJust)
 
-getinputfile :: String -> Opts -> Document
+getinputfile :: String -> Opts -> Maybe Document
 getinputfile content opts
     | fromJust (inputFormat opts) == "json" = parseJson content newdoc
     | fromJust (inputFormat opts) == "markdown" = parsemd content newdoc
     | fromJust (inputFormat opts) == "xml" = parsexml content newdoc
-    | otherwise = newdoc
+    | otherwise = Nothing
 
 parsefile :: String -> Opts -> IO ()
 parsefile content opts
-    | fromJust (outputFormat opts) == "json" = putStrLn (jsonRender (getinputfile content opts))
-    | fromJust (outputFormat opts) == "markdown" = putStrLn (markdownRender (getinputfile content opts))
-    | fromJust (outputFormat opts) == "xml" = putStrLn (xmlRender (getinputfile content opts))
-    | otherwise = putStrLn "ther's error" >> exitWith (ExitFailure 84)
-
---   -
---   {}
---   <@name> </@name>
+    |fromJust(outputFormat opts)=="json"=let js=getinputfile content opts in if
+    js==Nothing then exitWith(ExitFailure 84)else
+        putStrLn(jsonRender (fromJust js))
+    |fromJust(outputFormat opts)=="markdown"=let md=getinputfile content opts
+    in if md==Nothing then exitWith(ExitFailure 84)
+    else putStrLn(markdownRender (fromJust md))
+    |fromJust(outputFormat opts)=="xml"=let xml=getinputfile content opts in
+    if xml==Nothing then exitWith(ExitFailure 84)
+    else putStrLn(xmlRender (fromJust xml))|otherwise=exitWith(ExitFailure 84)

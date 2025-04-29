@@ -17,6 +17,9 @@ all:
 run:
 	stack exec $(EXEC)
 
+tests_run:
+	stack test
+
 clean:
 	rm -rf $(EXEC)
 	stack clean
