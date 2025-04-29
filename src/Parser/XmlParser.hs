@@ -59,7 +59,6 @@ getDateAndAuth file =
             Nothing -> error "missing balise"
       Nothing -> error "invalid header"
 
-
 parseheader :: String -> (String, Maybe String, Maybe String, Maybe String)
 parseheader file =
   case runParser (parseString "<header title=\"") file of
@@ -80,7 +79,6 @@ getheader (file, newfile) =
          metaDate = [Str (fromJust date)]
       }
    in (headerless ,Document newMeta (case newfile of Document _ blocks -> blocks))
-
 
 getroot :: (String, Document) -> (String, [String], Document)
 getroot (file, newfile) =
@@ -132,7 +130,7 @@ getsection (file , array, block) = (file , array, block)
 --     Nothing -> (file , array, newdoc)
 
 isinline :: (String, [String], [Inline]) -> (String, [String], [Inline])--(bold italic code link image)
-isinline (file, array, inline) = (file, array, inline)
+isinline (file, array, inline) = 
 
 -- a
 -- a

@@ -36,6 +36,9 @@ library
       Unformatter.Unformatmd
       Utils
   other-modules:
+      Parser.JsonParser
+      Parser.MarkdownParser
+      Parser.XmlParser
       Paths_mypandoc
   autogen-modules:
       Paths_mypandoc
