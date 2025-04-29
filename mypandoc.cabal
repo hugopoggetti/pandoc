@@ -31,10 +31,10 @@ library
       Renders.JsonRender.JsonRender
       Renders.XmlRender.XmlRender
       Renders.DebugRender.DebugRender
-      Unformatter.Unformatjson
-      Unformatter.Unformatxml
-      Unformatter.Unformatmd
       Utils
+      Parsers.JsonParser
+      Parsers.XmlParser
+      Parsers.MarkdownParser
   other-modules:
       Parser.JsonParser
       Parser.MarkdownParser
