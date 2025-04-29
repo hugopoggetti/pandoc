@@ -26,19 +26,16 @@ source-repository head
 library
   exposed-modules:
       Lib
+      Utils
       Ast.Document
       Renders.MarkdownRender.MarkdownRender
       Renders.JsonRender.JsonRender
       Renders.XmlRender.XmlRender
       Renders.DebugRender.DebugRender
-      Utils
       Parsers.JsonParser
       Parsers.XmlParser
       Parsers.MarkdownParser
   other-modules:
-      Parser.JsonParser
-      Parser.MarkdownParser
-      Parser.XmlParser
       Paths_mypandoc
   autogen-modules:
       Paths_mypandoc

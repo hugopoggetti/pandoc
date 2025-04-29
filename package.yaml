@@ -43,7 +43,6 @@ library:
     - Renders.JsonRender.JsonRender
     - Renders.XmlRender.XmlRender
     - Renders.DebugRender.DebugRender
-    - Utils
     - Parsers.JsonParser
     - Parsers.XmlParser
     - Parsers.MarkdownParser
