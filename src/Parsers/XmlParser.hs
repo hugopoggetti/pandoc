@@ -7,7 +7,7 @@
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 {-# OPTIONS_GHC -Wno-missing-fields #-}
 
-module Unformatter.Unformatxml (parsexml) where
+module Parsers.XmlParser (parsexml) where
 
 import Ast.Document (Document(..), Meta (..), newdoc, Inline (..))
 import Lib (Parser(runParser), parseString)

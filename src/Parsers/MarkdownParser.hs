@@ -6,7 +6,7 @@
 -}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Unformatter.Unformatmd (parsemd) where
+module Parsers.MarkdownParser (parsemd) where
 
 import Ast.Document (Document(..), Meta(..), Inline(..))
 import Lib (Parser, runParser, parseChar, parseString, parseOr, parseAnd, parseMany, parseSome)

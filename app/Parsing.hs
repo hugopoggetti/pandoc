@@ -11,13 +11,13 @@ module Parsing (parsefile) where
 import OptsParserSystem
 import Ast.Document (newdoc, Document)
 import Data.Maybe
-import Unformatter.Unformatjson
 import Renders.MarkdownRender.MarkdownRender (markdownRender)
 import Renders.JsonRender.JsonRender (jsonRender)
 import Renders.XmlRender.XmlRender (xmlRender)
 import System.Exit
-import Unformatter.Unformatxml (parsexml)
-import Unformatter.Unformatmd (parsemd)
+import Parsers.JsonParser (parseJson)
+import Parsers.XmlParser (parsexml)
+import Parsers.MarkdownParser (parsemd)
 
 getinputfile :: String -> Opts -> Document
 getinputfile content opts
@@ -25,7 +25,6 @@ getinputfile content opts
     | fromJust (inputFormat opts) == "markdown" = parsemd content newdoc
     | fromJust (inputFormat opts) == "xml" = parsexml content newdoc
     | otherwise = newdoc
-
 
 parsefile :: String -> Opts -> IO ()
 parsefile content opts

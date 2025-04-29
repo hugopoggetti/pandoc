@@ -6,7 +6,7 @@
 -}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Unformatter.Unformatjson (parseJson) where
+module Parsers.JsonParser (parseJson) where
 
 import Utils
 import Ast.Document (Document)

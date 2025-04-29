@@ -37,11 +37,15 @@ library:
   source-dirs: src
   exposed-modules:
     - Lib
+    - Utils
     - Ast.Document
     - Renders.MarkdownRender.MarkdownRender
     - Renders.JsonRender.JsonRender
     - Renders.XmlRender.XmlRender
     - Renders.DebugRender.DebugRender
+    - Parsers.JsonParser
+    - Parsers.XmlParser
+    - Parsers.MarkdownParser
 
 executables:
   mypandoc-exe:
