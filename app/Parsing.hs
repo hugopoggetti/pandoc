@@ -23,7 +23,7 @@ import Data.Maybe (Maybe (Nothing), fromJust)
 getinputfile :: String -> Opts -> Maybe Document
 getinputfile content opts
     | fromJust (inputFormat opts) == "json" = parseJson content newdoc
-    | fromJust (inputFormat opts) == "markdown" = parsemd content newdoc
+    | fromJust (inputFormat opts) == "markdown" =  parsemd content newdoc
     | fromJust (inputFormat opts) == "xml" = parsexml content newdoc
     | otherwise = Nothing
 

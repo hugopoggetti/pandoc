@@ -44,7 +44,6 @@ mdcutterDefault = Mdcutter {
     image = \(alt, src) -> "![" ++ alt ++ "](" ++ src ++ ")"
 }
 
-
 parsemd :: String -> Document -> Maybe Document
 parsemd file doc =
     let (mdmeta, rest) = case runParser (parseString "---\n") file of
