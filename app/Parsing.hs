@@ -9,7 +9,7 @@
 module Parsing (parsefile) where
 
 import OptsParserSystem
-import Ast.Document
+import Ast.Document (newdoc, Document)
 import Data.Maybe
 import Unformatter.Unformatjson
 import Renders.MarkdownRender.MarkdownRender (markdownRender)
