@@ -5,6 +5,8 @@
 -- Lib
 -}
 
+{-# LANGUAGE InstanceSigs #-}
+
 module Lib
     ( Parser,
         runParser,
@@ -23,7 +25,6 @@ module Lib
 
 import Control.Applicative (Alternative(..))
 import Text.Read (readMaybe)
-
 
 data Parser a = Parser {
     runParser :: String -> Maybe (a, String)
@@ -50,6 +51,13 @@ instance Alternative Parser where
         case p1 input of
             Just result -> Just result
             Nothing -> p2 input
+
+instance Monad Parser where
+  return = pure
+  (Parser p) >>= f = Parser $ \input ->
+    case p input of
+      Just (x, rest) -> runParser (f x) rest
+      Nothing -> Nothing
 
 parseChar :: Char -> Parser Char
 parseChar a = Parser $ \input -> case input of
