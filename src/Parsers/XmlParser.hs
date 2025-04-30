@@ -101,77 +101,98 @@ getroot (file, newfile) =
 -- bold inline
 
 getbold :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getbold (file , array, inline) = (file , array, Just inline)
+getbold (file , array, inline) = 
+   let ncontent = splitOne '<' file
+       (nfile, narray, ninlines) = isless ("<" ++ last ncontent, array, [])
+   in if getiteration narray "</bold>" 0 0<1 then(nfile,narray,
+   Just (inline ++ fromJust ninlines)) else
+   getbold (nfile, narray, inline ++ fromJust ninlines)
 
-isbold :: (String, Int, [String], [Inline]) -> (String, [String], Maybe [Inline])
+isbold :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
 isbold (file, array, inline) =
    case runParser (parseString "<bold>") file of
-    Just (_, rest) -> (rest, push "</paragraph>\n" array, Just inline)
-    Nothing -> islink (file , array, inline)
+    Just (_, rest) -> 
+      let (nfile,narray,bold) = getbold(rest ,push "</bold>\n" array, [])
+      in (nfile, narray, Just(inline ++[Emph(fromJust bold)]))
+    Nothing -> isaclosing (file , array, inline)
 
 -- italic inline
 
 getitalic :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getitalic (file , array, inline) = (file , array, Just inline)
+getitalic (file , array, inline) =
+   let ncontent = splitOne '<' file
+       (nfile, narray, ninlines) = isless ("<" ++ last ncontent, array, [])
+   in if getiteration narray "</italic>" 0 0<1 then(nfile,narray,
+   Just (inline ++ fromJust ninlines)) else
+   getitalic (nfile, narray, inline ++ fromJust ninlines)
 
-isitalic :: (String, Int, [String], [Inline]) -> (String, [String], Maybe [Inline])
+isitalic :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
 isitalic (file, array, inline) =
    case runParser (parseString "<italic>") file of
-    Just (_, rest) -> (rest, push "</paragraph>\n" array, Just inline)
+    Just (_, rest) -> 
+      let (nfile,narray,italic) = getitalic(rest ,push "</italic>\n" array, [])
+      in (nfile, narray, Just(inline ++[Emph(fromJust italic)]))
     Nothing -> isbold (file , array, inline)
+
 -- code text inline
 
 getcode :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getcode (file , array, inline) = (file , array, Just inline)
+getcode (file, array, inline) =
+    let (content, newfile) = splitstr file "</code>"
+    in case runParser (parseString "<") content of
+        Just (_, rest) -> (fromJust newfile, array, Nothing)
+        Nothing -> (fromJust newfile, array, Just (inline ++ [Code content]))
 
-iscode :: (String, Int, [String], [Inline]) -> (String, [String], Maybe [Inline])
+iscode :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
 iscode (file, array, inline) =
    case runParser (parseString "<code>") file of
-    Just (_, rest) -> (rest, push "</paragraph>\n" array, Just inline)
+    Just (_, rest) -> getcode(rest, array, inline)
     Nothing -> isitalic (file , array, inline)
 
 -- THE SECOND STRING OF TARGET WILL BE EMPTY FOR THE MOMENT
 -- link inline
 
 getlink :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getlink (file , array, inline) = (file , array, Just inline)
+getlink (file , array, inline) = 
+   let ncontent = splitOne '<' file
+       (nfile, narray, ninlines) = isless ("<" ++ last ncontent, array, [])
+   in if getiteration narray "</link>" 0 0<1 then(nfile,narray,
+   Just (inline ++ fromJust ninlines)) else
+   getlink (nfile, narray, inline ++ fromJust ninlines)
 
-islink :: (String, Int, [String], [Inline]) -> (String, [String], Maybe [Inline])
+islink :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
 islink (file, array, inline)= 
    case runParser (parseString "<link url=\"") file of
-    Just (_, rest) -> (rest, push "</paragraph>\n" array, Just inline)
+    Just (_, rest) -> 
+      let content = splitOne '>' rest
+          parray = push "</link>" array
+          (nfile,narray,link)=getlink(last content,parray, [])
+      in (nfile, narray, Just(inline ++[Link(fromJust link)
+      (init(head content),"")]))
     Nothing -> iscode (file , array, inline)
 
 -- image inline
 
 getimage :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getimage (file , array, inline) = 
-   let newfile = splitOne "<" ++ file
-       (nfile, narray, ninlines) = isimage (newfile, array, [])
-   in 
+getimage (file, array, inline) = 
+   let ncontent = splitOne '<' file
+       (nfile, narray, ninlines) = isless ("<" ++ last ncontent, array, [])
+   in if getiteration narray "</link>" 0 0<1 then(nfile,narray,
+   Just (inline ++ fromJust ninlines)) else
+   getimage (nfile, narray, inline ++ fromJust ninlines)
 
-isimage :: (String [String], [Inline]) -> (String, [String], Maybe [Inline])
+isimage :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
 isimage (file, array, inline)= 
    case runParser (parseString "<image url=\"") file of
     Just (_, rest) -> 
       let content = splitOne '>' rest
-          ncontent = splitOne '<' (last content)
           parray = push "</image>" array
-          (nfile,narray,image)=getimage(head ncontent,parray, [])
+          (nfile,narray,image)=getimage(last content,parray, [])
       in (nfile, narray, Just(inline ++[Image(fromJust image)
       (init(head content),"")]))
     Nothing -> islink (file , array, inline)
 
 -- inlineless
-
-gettext :: (String, String, [String], String, [Inline]) ->
-   (String, [String], Maybe [Inline])
-gettext (file, content, array, "</bold>", inline) = getbold(file,array,inline)
-gettext (file, content, array,"</italic>",inline)=getitalic(file,array,inline)
-gettext (file, content, array, "</code>", inline) = getcode(file,array,inline)
-gettext (file, content, array, "</link>", inline) = getlink(file,array,inline)
-gettext (file, content, array, "</image>", inline)=getimage(file,array,inline)
-gettext (file, content, array, _, inline) = (file,array,Nothing)
 
 isless :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
 isless (file, array, inline)= 
@@ -180,9 +201,7 @@ isless (file, array, inline)=
     Nothing -> 
       let content = splitOne '<' file
           (elem, _) = pop array
-      in if length array == 0 then (last content, array,
-      Just(inline ++ [Str(head content)])) else
-         gettext (last content, head content, array, fromJust elem, inline)
+      in (last content, array, Just(inline ++ [Str(head content)]))
 
 -- inlines
 
@@ -231,7 +250,7 @@ getsection :: (String, [String], [Block]) -> (String, [String], Maybe [Block])
 getsection (file , array, block) =
    let content = splitOne '>' file
        ncontent = splitOne '\n' (last content)
-       level = getiteration array 0 0
+       level = getiteration array "</section>\n" 0 0
        newfile = removeLeadingSpaces (last ncontent)
        (nfile, narray, nblock) = isablock (newfile, array, [])
    in (nfile, narray,
@@ -271,7 +290,7 @@ getlist :: (String, [String], Int, [[Block]]) -> (String, [String], Maybe [[Bloc
 getlist (file , array, nb, block) =
    let newfile = removeLeadingSpaces file
        (nfile, narray, nblock) = isaparagraph (newfile, array, [])
-   in if getiteration narray 0 0<nb then(nfile,narray,
+   in if getiteration narray "<list>\n" 0 0<nb then(nfile,narray,
    Just (block ++ [fromJust nblock])) else
    getlist (nfile, narray, nb, block ++ [fromJust nblock])
 
@@ -281,7 +300,8 @@ isalist (file, array, block) =
     Just (_, rest) ->
       let pfile = removeLeadingSpaces rest
           parray = push "</list>\n" array
-          (nfile,narray,list)=getlist (pfile,parray,getiteration array 0 0,[])
+          (nfile,narray,list)=
+            getlist (pfile,parray,getiteration array "<list>\n" 0 0,[])
       in (nfile, narray, Just(block ++ [BulletList (fromJust list)]))
     Nothing -> isaclosing (file , array, block)
 
@@ -318,6 +338,3 @@ parsingxml (file, newfile) =
 
 parsexml :: String -> Document -> Maybe Document
 parsexml file newfile = parsingxml (file, newfile)
-
-
---trace headless $

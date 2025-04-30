@@ -44,12 +44,12 @@ safeIndex [] _ = Nothing
 safeIndex (x:_) 0 = Just x
 safeIndex (_:xs) n = safeIndex xs (n-1)
 
-getiteration :: [String]-> Int -> Int -> Int
-getiteration array index val
+getiteration :: [String] -> String -> Int -> Int -> Int
+getiteration array name index val
     | safeIndex array index == Nothing = val
-    | fromJust(safeIndex array index) == "</section>" =
-        getiteration array (index+1) val + 1
-    | otherwise = getiteration array (index+1) val
+    | fromJust(safeIndex array index) == name =
+        getiteration array name (index+1) val + 1
+    | otherwise = getiteration array name (index+1) val
 
 splitstr :: String -> String -> (String, Maybe String)
 splitstr delim str = case breakOn delim str of
