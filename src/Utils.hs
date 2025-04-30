@@ -4,8 +4,13 @@
 -- File description:
 -- Main
 -}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use isNothing" #-}
 
-module Utils (splitOne, splitOn, joinWithComma, removeLeadingSpaces, push, pop) where
+module Utils (splitOne, splitOn, joinWithComma) where
+import Ast.Document (Inline)
+import Data.List
+import Data.Maybe (fromJust)
 
 splitOn :: Eq a => a -> [a] -> [[a]]
 splitOn _ [] = []
@@ -23,13 +28,3 @@ joinWithComma :: [String] -> String
 joinWithComma [] = ""
 joinWithComma [x] = x
 joinWithComma (x:xs) = x ++ "," ++ joinWithComma xs
-
-removeLeadingSpaces :: String -> String
-removeLeadingSpaces = dropWhile (== ' ')
-
-push :: a -> [a] -> [a]
-push x stack = x : stack
-
-pop :: [a] -> (Maybe a, [a])
-pop []     = (Nothing, [])
-pop (x:xs) = (Just x, xs)

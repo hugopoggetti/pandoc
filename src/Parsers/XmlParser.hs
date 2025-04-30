@@ -2,198 +2,144 @@
 -- EPITECH PROJECT, 2025
 -- B-FUN-400-TLS-4-1-mypandoc-hugo.poggetti
 -- File description:
--- Main
+-- XML Parser
 -}
 
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
-{-# OPTIONS_GHC -Wno-missing-fields #-}
 
 module Parsers.XmlParser (parsexml) where
 
-import Ast.Document (Document(..), Meta (..), newdoc, Inline (..), Block)
-import Lib (Parser(runParser), parseString)
-import Utils
+import Lib
+import Control.Applicative (Alternative(..))
+import Ast.Document
+import Text.Read (readMaybe)
 import Data.Maybe (fromJust)
-import Debug.Trace
 
-data Xmlcutter = Xmlcutter {
-   body :: [String]
-}
+-- | Basic XML structure
+data XmlValue
+  = XmlElement String [(String, String)] [XmlValue]
+  | XmlText String
+  deriving (Show, Eq)
 
-xmlCutterDefault :: Xmlcutter
-xmlCutterDefault = Xmlcutter {
-   body =  ["<paragraph>", "<section title=", "<bold>", "<italic>",
-   "<code>", "<codeblock>", "<list>", "<link url=", "<image url="]
-}
+-- | Basic XML parsing
+parseXmlValue :: Parser XmlValue
+parseXmlValue =
+   parseWhitespace *> (parseXmlElement <|> parseXmlText) <* parseWhitespace
 
-parsedate :: String -> (String, Maybe String)
-parsedate file =
-   case runParser (parseString "<date>") file of
-    Just (_, rest) ->
-      let dateParts = splitOne '<' rest
-          date = head dateParts
-      in case runParser (parseString "</date>\n") ("<"++last dateParts) of
-         Just (_, rest) -> (removeLeadingSpaces rest, Just date)
-         Nothing -> ("", Nothing)
-    Nothing -> ("", Nothing)
+parseXmlText :: Parser XmlValue
+parseXmlText = XmlText <$> parseSome (parseAnyCharExcept "<")
 
-parseauthor :: String -> (String, Maybe String)
-parseauthor file =
-   case runParser (parseString "<author>") file of
-    Just (_, rest) ->
-      let authParts = splitOne '<' rest
-          auth = head authParts
-      in case runParser (parseString "</author>\n") ("<"++last authParts) of
-         Just (_, rest) -> (removeLeadingSpaces rest, Just auth)
-         Nothing -> ("", Nothing)
-    Nothing -> ("", Nothing)
+parseXmlElement :: Parser XmlValue
+parseXmlElement = do
+  _ <- parseChar '<'
+  name <- parseSome (parseAnyChar (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']))
+  attribute <- parseMany parseXmlAttribute
+  _ <- parseChar '>'
+  blocks <- parseMany parseXmlValue
+  _ <- parseString "</"
+  _ <- parseString name
+  _ <- parseChar '>'
+  return $ XmlElement name attribute blocks
 
-getDateAndAuth :: String -> (String, Maybe String, Maybe String)
-getDateAndAuth file =
-   case runParser (parseString ">\n") file of
-      Just (_, rest) ->
-         let (afile, auth) = parseauthor (removeLeadingSpaces rest)
-             (dfile, date) = parsedate afile
-         in case runParser (parseString "</header>\n")
-         (removeLeadingSpaces dfile) of
-            Just (_, rest) -> (rest, auth, date)
-            Nothing -> ("", Nothing, Nothing)
-      Nothing -> ("", Nothing, Nothing)
+parseXmlAttribute :: Parser (String, String)
+parseXmlAttribute = do
+  _ <- parseWhitespace
+  headerc <- parseSome (parseAnyChar (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']))
+  _ <- parseChar '='
+  _ <- parseChar '"'
+  value <- parseMany (parseAnyCharExcept "\"")
+  _ <- parseChar '"'
+  return (headerc, value)
 
-parseheader :: String -> (String, Maybe String, Maybe String, Maybe String)
-parseheader file =
-  case runParser (parseString "<header title=\"") file of
-    Just (_, rest) ->
-      let titleParts = splitOne '\"' rest
-          title= head titleParts
-      in  
-         let (headerless, auth, date) = getDateAndAuth (last titleParts)
-         in ((removeLeadingSpaces headerless), Just title, auth, date)
-    Nothing -> ("", Nothing, Nothing, Nothing)
+parseWhitespace :: Parser String
+parseWhitespace = parseMany (parseAnyChar " \t\n\r")
 
-getheader :: (String, Document) -> (String, Maybe Document)
-getheader (file, newfile) = 
-   let (headerless, title, auth, date) = parseheader file
-       newMeta = Meta {
-         metaTitle = [Str (fromJust title)],
-         metaAuthors = [[Str (fromJust auth)]],
-         metaDate = [Str (fromJust date)]
-      }
-       ndoc = if title == Nothing || auth == Nothing || date == Nothing then
-         Nothing else Just (Document newMeta
-         (case newfile of Document _ blocks->blocks))
-   in (headerless, ndoc)
+xmlToDocument :: XmlValue -> Document
+xmlToDocument (XmlElement "document" _ block) =
+  let meta = getmeta block
+      blocks = getblocks block
+  in Document meta blocks
+xmlToDocument _ = Document defaultMeta []
 
-getroot :: (String, Document) -> (String, [String], Maybe Document)
-getroot (file, newfile) =
-   case runParser (parseString "<document>\n") file of
-      Just (result, rest) -> (removeLeadingSpaces rest, [result],Just newfile)
-      Nothing -> ("", [], Nothing)
+getmeta :: [XmlValue] -> Meta
+getmeta block = case findElement "header" block of
+  Just (XmlElement _ attrs headerblocks) ->
+    let title = lookup "title" attrs
+        author = extractText "author" headerblocks
+        date = extractText "date" headerblocks
+    in Meta
+      { metaTitle = [Str (fromJust title) | not (title == Nothing)]
+      , metaAuthors = [[Str (fromJust author) | not (title == Nothing)]]
+      , metaDate = [Str (fromJust date) | not (title == Nothing)] }
+  _ -> defaultMeta
 
--- a
--- a
--- a
--- a
--- a
--- a
--- a
--- a
--- a
+getblocks :: [XmlValue] -> [Block]
+getblocks block = case findElement "body" block of
+  Just (XmlElement _ _ body) -> concatMap getblock body
+  _ -> []
 
-getbold :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getbold (file , array, inline) = (file , array, Just inline)
+getblock :: XmlValue -> [Block]
+getblock (XmlElement "paragraph" _ inlines) =
+   [Para (concatMap getInline inlines)]
+getblock (XmlElement "section" attribute block) =
+  let title = maybe [] (\t -> [Str t]) (lookup "title" attribute)
+      content = concatMap getblock block
+      sectionLevel = extractSectionLevel (fromJust(lookup "title" attribute))
+  in [Section sectionLevel title content]
+getblock (XmlElement "list" _ items) = [BulletList
+   (map (\(XmlElement _ _ is) -> [Para (concatMap getInline is)]) items)]
+getblock (XmlElement "codeblock" _ [XmlText content]) = [CodeBlock content]
+getblock _ = [Null]
 
-getitalic :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getitalic (file , array, inline) = (file , array, Just inline)
+extractSectionLevel :: String -> Int
+extractSectionLevel title =
+  case words title of
+    (_ : levelStr : _) ->
+      case readMaybe levelStr of
+        Just level -> level
+        Nothing -> 0
+    _ -> 0
 
-getcode :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getcode (file , array, inline) = (file , array, Just inline)
+getInline :: XmlValue -> [Inline]
+getInline (XmlText text) = [Str text]
+getInline (XmlElement "bold" _ inline) = [Strong (concatMap getInline inline)]
+getInline (XmlElement "italic" _ inline) = [Emph (concatMap getInline inline)]
+getInline (XmlElement "code" _ [XmlText txt]) = [Code txt]
+getInline (XmlElement "link" attrs inline) =
+  let url = maybe "" id (lookup "url" attrs)
+      content = concatMap getInline inline
+  in [Link content (url, "")]
+getInline (XmlElement "image" attrs inline) =
+  let url = maybe "" id (lookup "url" attrs)
+      alt = concatMap getInline inline
+  in [Image alt (url, "")]
+getInline _ = []
 
-getlink :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getlink (file , array, inline) = (file , array, Just inline)
+findElement :: String -> [XmlValue] -> Maybe XmlValue
+findElement _ [] = Nothing
+findElement name (x@(XmlElement n _ _) : xs)
+  | name == n = Just x
+  | otherwise = findElement name xs
+findElement name (_:xs) = findElement name xs
 
-getimage :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-getimage (file , array, inline) = (file , array, Just inline)
+extractText :: String -> [XmlValue] -> Maybe String
+extractText name inline = case findElement name inline of
+  Just (XmlElement _ _ [XmlText txt]) -> Just txt
+  _ -> Nothing
 
--- a
--- a
--- a
--- a
+defaultMeta :: Meta
+defaultMeta = Meta { metaTitle = [], metaAuthors = [], metaDate = [] }
 
-getcodeblock :: (String, [String], [Block]) -> (String, [String], Maybe [Block])
-getcodeblock (file , array, block) = (file , array, Just block)
+runXmlParser :: String -> Maybe XmlValue
+runXmlParser input = case runParser parseXmlValue input of
+  Just (val, "") -> Just val
+  Just (val, rest) -> if all (`elem` " \t\n\r") rest then Just val else Nothing
+  Nothing -> Nothing
 
-getlist :: (String, [String], [Block]) -> (String, [String], Maybe [Block])
-getlist (file , array, block) = (file , array, Just block)
-
-getparagraph :: (String, [String], [Block]) -> (String, [String], Maybe [Block])
-getparagraph (file , array, block) = (file , array, Just block)
-
-getsection :: (String, [String], [Block]) -> (String, [String], Maybe [Block])
-getsection (file , array, block) = 
-   case runParser (parseString "<section title=\"") file of
-    Just (_, rest) ->
-      let sectionParts = splitOne '>' rest
-          section = head sectionParts
-      in (removeLeadingSpaces rest, push "</section>" array, Just block)
-    Nothing -> (file , array, Nothing)
-
-isinline :: (String, [String], [Inline]) -> (String, [String], Maybe [Inline])
-isinline (file, array, inline)=let(bfil,barray,bin)=getbold(file,array,inline)
-   in if bfil /= file then (bfil, barray, bin) else
-   let (efile, earray, eblock) = getitalic (file, array, inline)
-   in if efile /= file then (efile, earray, eblock) else
-   let (cfile, carray, cblock) = getcode (file, array, inline)
-   in if cfile /= file then (cfile, carray, cblock) else
-   let (lfile, larray, lblock) = getlink (file, array, inline)
-   in if lfile /= file then (lfile, larray, lblock) else
-   let (ifile, iaray, iblock) = getimage (file, array, inline)
-   in if ifile/=file then(ifile,iaray, iblock)else(file,array,Just inline)
-
-isaclosing :: (String, [String], [Block]) -> (String, [String], Maybe [Block])
-isaclosing (file, array, block) =
-  case runParser (parseString "</") file of
-    Just (_, rest1) ->
-      case array of
-        (toclose:restArray) ->
-          case runParser (parseString toclose) rest1 of
-            Just (_, rest2)->(removeLeadingSpaces rest2,restArray,Just block)
-            Nothing -> (file, array, Nothing)
-        [] -> (file, array, Nothing)
-    Nothing -> (file, array, Nothing)
-
-isablock :: (String, [String], [Block]) -> (String, [String], Maybe [Block])
-isablock (file, array, block) =
-    let (pfile, parray, pblock) = getparagraph (file, array, block)
-    in if pfile /= file then (pfile, parray, pblock) else
-    let (sfile, sarray, sblock) = getsection (file, array, block)
-    in if sfile /= file then (sfile, sarray, sblock) else
-    let (cfile, carray, cblock) = getcodeblock (file, array, block)
-    in if cfile /= file then (cfile, carray, cblock) else
-    let (lfile, laray, lblock) = getlist (file, array, block)
-    in if lfile/=file then(lfile,laray, lblock)else(file,array,Just block)
-
-parsebody :: (String, [String], Document) -> (String, [String], Maybe Document)
-parsebody (file, newfile, newdoc) = (file, newfile, Just newdoc)
-
-getbodybalise :: (String, [String], Document) -> (String, [String], Maybe Document)
-getbodybalise (file, array, newfile) =
-   case runParser (parseString "<body>\n") file of
-      Just(_,rest)->(removeLeadingSpaces rest,push "</body>\n" array,
-         Just newfile)
-      Nothing -> ("", [], Nothing)
-
-parsingxml :: (String, Document) -> Maybe Document
-parsingxml (file, newfile) =
-    let (nfile, array, ndoc) = getroot (file, newfile)
-        (headless, head) = if ndoc == Nothing then (file, Nothing) else
-         getheader (nfile, fromJust ndoc)
-        (bodyfile, newarray, bodydoc) = if head == Nothing then ("", [], Nothing)
-         else getbodybalise(headless, array, fromJust head)
-    in Just newfile
+parseXmlToDocument :: String -> Maybe Document
+parseXmlToDocument input = do
+  xmlVal <- runXmlParser input
+  return (xmlToDocument xmlVal)
 
 parsexml :: String -> Document -> Maybe Document
-parsexml file newfile = parsingxml (file, newfile)
-
-
---trace headless $
+parsexml input _ = parseXmlToDocument input

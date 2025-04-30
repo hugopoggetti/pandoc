@@ -37,7 +37,7 @@ xmlRenderBlocks =  concatMap xmlRenderBlock
 -- | Recursive function to render a block
 xmlRenderBlock :: Block -> String
 xmlRenderBlock (Plain text) = xmlRenderInlines text
-xmlRenderBlock (Para text) = 
+xmlRenderBlock (Para text) =
     "<paragraph>" ++ xmlRenderInlines text ++ "</paragraph>\n"
 xmlRenderBlock (CodeBlock content) = "<codeblock>\n<paragraph>" 
     ++ content ++ "</paragraph>\n</codeblock>\n"
