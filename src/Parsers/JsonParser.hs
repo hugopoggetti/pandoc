@@ -11,7 +11,7 @@ module Parsers.JsonParser (parseJson) where
 
 import Lib
 import Control.Applicative (Alternative(..))
--- import Data.Maybe (mapMaybe)
+import Data.Maybe (mapMaybe)
 import Ast.Document
 
 data JsonValue
@@ -143,11 +143,12 @@ processBodyItem level (JsonObject obj) =
                 Nothing ->
                     case findString "codeblock" obj of
                         Just code -> [CodeBlock code]
-                        Nothing -> [Null] 
-                            -- case findString "codeblock" obj of
-                            --     Just codeLines -> 
-                            --         [CodeBlock (unlines (mapMaybe extractString codeLines))]
-                            --     Nothing -> [Null]
+                        Nothing -> 
+                            case findArray "codeblock" obj of
+                                Just codeLines -> 
+                                    [CodeBlock (unlines 
+                                        (mapMaybe extractString codeLines))]
+                                Nothing -> [Null]
 processBodyItem _ _ = [Null]
 
 extractString :: JsonValue -> Maybe String
