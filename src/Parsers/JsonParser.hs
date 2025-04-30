@@ -132,7 +132,7 @@ processBody :: [JsonValue] -> Int -> [Block]
 processBody bodyItems level = concatMap (processBodyItem level) bodyItems
 
 processBodyItem :: Int -> JsonValue -> [Block]
-processBodyItem level (JsonArray inlineArray) = 
+processBodyItem _ (JsonArray inlineArray) = 
     [Para (concatMap processArrayItem inlineArray)]
 processBodyItem level (JsonObject obj) = 
     case findObject "section" obj of
