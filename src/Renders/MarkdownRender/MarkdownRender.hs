@@ -84,6 +84,7 @@ markRenderBlock (DefinitionList items) = markRenderDefList items
 markRenderBlock (Header lev content) = replicate lev '#' ++ 
     " " ++ markRenderInlines content ++"\n"
 markRenderBlock (Section _ [] ys) = markdownRenderBody ys
+markRenderBlock (Section _ [Str ""] ys) = markdownRenderBody ys
 markRenderBlock (Section level xs ys) = replicate level '#' ++ " " 
     ++ markRenderInlines xs ++ "\n" ++ markdownRenderBody ys
 markRenderBlock _ = ""

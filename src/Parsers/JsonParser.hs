@@ -11,6 +11,7 @@ module Parsers.JsonParser (parseJson) where
 
 import Lib
 import Control.Applicative (Alternative(..))
+-- import Data.Maybe (mapMaybe)
 import Ast.Document
 
 data JsonValue
@@ -113,7 +114,7 @@ processObject obj =
         bodyArray = findArray "body" obj
         meta = processHeader headerObj
         blocks = case bodyArray of
-            Just array -> processBody array
+            Just array -> processBody array 0
             Nothing -> []
     in Document meta blocks
 
@@ -127,32 +128,40 @@ processHeader (Just headerObj) =
         metaDate = processInlines (findString "date" headerObj)
     }
 
-processBody :: [JsonValue] -> [Block]
-processBody bodyItems = concatMap processBodyItem bodyItems
+processBody :: [JsonValue] -> Int -> [Block]
+processBody bodyItems level = concatMap (processBodyItem level) bodyItems
 
-processBodyItem :: JsonValue -> [Block]
-processBodyItem (JsonArray inlineArray) = 
+processBodyItem :: Int -> JsonValue -> [Block]
+processBodyItem level (JsonArray inlineArray) = 
     [Para (concatMap processArrayItem inlineArray)]
-processBodyItem (JsonObject obj) = 
+processBodyItem level (JsonObject obj) = 
     case findObject "section" obj of
-        Just sectionObj -> [processSection sectionObj]
+        Just sectionObj -> [processSection sectionObj (level + 1)]
         Nothing -> 
             case findArray "list" obj of
                 Just items -> [BulletList (map processListItem items)]
                 Nothing ->
                     case findString "codeblock" obj of
                         Just code -> [CodeBlock code]
-                        Nothing -> [Null]
-processBodyItem _ = [Null]
+                        Nothing -> [Null] 
+                            -- case findString "codeblock" obj of
+                            --     Just codeLines -> 
+                            --         [CodeBlock (unlines (mapMaybe extractString codeLines))]
+                            --     Nothing -> [Null]
+processBodyItem _ _ = [Null]
 
-processSection :: [(String, JsonValue)] -> Block
-processSection obj = 
+extractString :: JsonValue -> Maybe String
+extractString (JsonString s) = Just s
+extractString _ = Nothing
+
+processSection :: [(String, JsonValue)] -> Int -> Block
+processSection obj level = 
     let title = findString "title" obj
         contentArray = findArray "content" obj
         content = case contentArray of
-            Just arr -> processBody arr
+            Just arr -> processBody arr level
             Nothing -> []
-    in Section 1 (processInlines title) content
+    in Section level (processInlines title) content
 
 processListItem :: JsonValue -> [Block]
 processListItem (JsonArray inlines) =
