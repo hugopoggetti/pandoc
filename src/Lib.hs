@@ -20,7 +20,8 @@ module Lib
         parseAndWith,
         parseMany,
         parseString,
-        parseSome
+        parseSome,
+        parseAnyCharExcept,
     ) where
 
 import Control.Applicative (Alternative(..))
@@ -141,3 +142,9 @@ parseSome p = Parser $ \input ->
                 Just (results, rest') -> Just (result:results, rest')
                 Nothing -> Just ([result], rest)
         Nothing -> Nothing
+
+parseAnyCharExcept :: String -> Parser Char
+parseAnyCharExcept chars = Parser $ \input ->
+    case input of
+        [] -> Nothing
+        (x:xs) -> if x `notElem` chars then Just (x, xs) else Nothing
