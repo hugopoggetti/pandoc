@@ -11,7 +11,6 @@ module Parsers.JsonParser (parseJson) where
 
 import Lib
 import Control.Applicative (Alternative(..))
-import Data.Maybe (mapMaybe)
 import Ast.Document
 
 data JsonValue
@@ -78,22 +77,48 @@ parseJsonArray = JsonArray <$> (
         return (rest))
 
 parseJsonObject :: Parser JsonValue
-parseJsonObject = JsonObject <$> (
-    parseChar '{' *> parseWhitespace *> (parseJsonPairs <|> pure [])
-        <* parseWhitespace <*parseChar '}')
-  where
-    parseJsonPairs = parseAndWith (:) parseJsonPair (
-        parseMany (parseWhitespace *> parseChar ','
-            *> parseWhitespace *> parseJsonPair) >>= \rest ->
-        return (rest))
-    
-    parseJsonPair = do
-      key <- parseChar '"' *> parseMany parseStringChar <* parseChar '"'
-      _ <- parseWhitespace
-      _ <- parseChar ':'
-      _ <- parseWhitespace
-      value <- parseJsonValue
-      return (key, value)
+parseJsonObject = JsonObject <$> parseObjectContent
+
+parseObjectContent :: Parser [(String, JsonValue)]
+parseObjectContent = do
+  _ <- parseChar '{'
+  _ <- parseWhitespace
+  pairs <- parseJsonPairs <|> pure []
+  _ <- parseWhitespace
+  _ <- parseChar '}'
+  return pairs
+
+parseJsonPairs :: Parser [(String, JsonValue)]
+parseJsonPairs = do
+  firstPair <- parseJsonPair
+  restPairs <- parseRestPairs
+  return (firstPair : restPairs)
+
+parseRestPairs :: Parser [(String, JsonValue)]
+parseRestPairs = parseMany (parsePairSeparator *> parseJsonPair)
+
+parsePairSeparator :: Parser Char
+parsePairSeparator = do
+  _ <- parseWhitespace
+  comma <- parseChar ','
+  _ <- parseWhitespace
+  return comma
+
+parseJsonPair :: Parser (String, JsonValue)
+parseJsonPair = do
+  key <- parseJsonStr
+  _ <- parseWhitespace
+  _ <- parseChar ':'
+  _ <- parseWhitespace
+  value <- parseJsonValue
+  return (key, value)
+
+parseJsonStr :: Parser String
+parseJsonStr = do
+  _ <- parseChar '"'
+  chars <- parseMany parseStringChar
+  _ <- parseChar '"'
+  return chars
 
 runJsonParser :: String -> Maybe JsonValue
 runJsonParser input = case runParser parseJsonValue input of
@@ -128,32 +153,73 @@ processHeader (Just headerObj) =
         metaDate = processInlines (findString "date" headerObj)
     }
 
+-- Helper to clean strings from newlines and extra whitespace
+cleanString :: String -> String
+cleanString = filter (/= '\n') . trimEnd
+  where
+    trimEnd = reverse . dropWhile (`elem` " \t\n\r") . reverse
+
 processBody :: [JsonValue] -> Int -> [Block]
 processBody bodyItems level = concatMap (processBodyItem level) bodyItems
 
 processBodyItem :: Int -> JsonValue -> [Block]
-processBodyItem _ (JsonArray inlineArray) = 
-    [Para (concatMap processArrayItem inlineArray)]
-processBodyItem level (JsonObject obj) = 
-    case findObject "section" obj of
-        Just sectionObj -> [processSection sectionObj (level + 1)]
-        Nothing -> 
-            case findArray "list" obj of
-                Just items -> [BulletList (map processListItem items)]
-                Nothing ->
-                    case findString "codeblock" obj of
-                        Just code -> [CodeBlock code]
-                        Nothing -> 
-                            case findArray "codeblock" obj of
-                                Just codeLines -> 
-                                    [CodeBlock (unlines 
-                                        (mapMaybe extractString codeLines))]
-                                Nothing -> [Null]
-processBodyItem _ _ = [Null]
+processBodyItem level jsonValue = case jsonValue of
+    JsonArray inlineArray -> 
+        processInlineArray inlineArray
+    JsonObject obj -> 
+        processObjectByType level obj
+    _ -> 
+        [Null]
 
-extractString :: JsonValue -> Maybe String
-extractString (JsonString s) = Just s
-extractString _ = Nothing
+processInlineArray :: [JsonValue] -> [Block]
+processInlineArray inlineArray = 
+    [Para (concatMap (processArrayItem . cleanJsonString) inlineArray)]
+
+processObjectByType :: Int -> [(String, JsonValue)] -> [Block]
+processObjectByType level obj
+    | Just sectionObj <- findObject "section" obj =
+        [processSection sectionObj (level + 1)]
+    | Just items <- findArray "list" obj = 
+        [processListAsBlock items]
+    | Just code <- findString "codeblock" obj = 
+        [processSimpleCodeBlock code]
+    | Just codeLines <- findArray "codeblock" obj = 
+        [processComplexCodeBlock codeLines]
+    | Just paraItems <- findArray "paragraph" obj = 
+        [processParagraphItems paraItems]
+    | otherwise = [Null]
+
+processListAsBlock :: [JsonValue] -> Block
+processListAsBlock items = 
+    BulletList (map processListItem items)
+
+processSimpleCodeBlock :: String -> Block
+processSimpleCodeBlock code = 
+    CodeBlock (cleanString code)
+
+processComplexCodeBlock :: [JsonValue] -> Block
+processComplexCodeBlock codeLines =
+    let codeContent = concatMap extractStringContent codeLines
+    in  if null codeContent
+        then Null
+        else CodeBlock codeContent
+
+processParagraphItems :: [JsonValue] -> Block
+processParagraphItems paraItems = 
+    Para (concatMap processArrayItem paraItems)
+-- Clean JsonString values by removing newlines
+cleanJsonString :: JsonValue -> JsonValue
+cleanJsonString (JsonString s) = JsonString (cleanString s)
+cleanJsonString other = other
+
+extractStringContent :: JsonValue -> String
+extractStringContent (JsonString s) = cleanString s
+extractStringContent (JsonArray arr) = concatMap extractStringContent arr
+extractStringContent (JsonObject obj) = 
+    case findString "paragraph" obj of
+        Just para -> para
+        Nothing -> concatMap (extractStringContent . snd) obj
+extractStringContent _ = ""
 
 processSection :: [(String, JsonValue)] -> Int -> Block
 processSection obj level = 
@@ -166,11 +232,11 @@ processSection obj level =
 
 processListItem :: JsonValue -> [Block]
 processListItem (JsonArray inlines) =
-    [Para (concatMap processArrayItem inlines)]
+    [Para (concatMap (processArrayItem . cleanJsonString) inlines)]
 processListItem _ = [Null]
 
 processArrayItem :: JsonValue -> [Inline]
-processArrayItem (JsonString str) = [Str str]
+processArrayItem (JsonString str) = [Str (cleanString str)]
 processArrayItem (JsonObject obj) =
     processBold obj
     <|> processItalic obj
@@ -183,17 +249,17 @@ processArrayItem _ = []
 processBold :: [(String, JsonValue)] -> [Inline]
 processBold obj = maybeToList $ do
     text <- findString "bold" obj
-    return (Strong [Str text])
+    return (Strong [Str (cleanString text)])
 
 processItalic :: [(String, JsonValue)] -> [Inline]
 processItalic obj = maybeToList $ do
     text <- findString "italic" obj
-    return (Emph [Str text])
+    return (Emph [Str (cleanString text)])
 
 processCode :: [(String, JsonValue)] -> [Inline]
 processCode obj = maybeToList $ do
     text <- findString "code" obj
-    return (Code text)
+    return (Code (cleanString text))
 
 getLink :: [(String, JsonValue)] -> [Inline]
 getLink obj = case findObject "link" obj of
@@ -217,23 +283,9 @@ maybeToList :: Maybe a -> [a]
 maybeToList (Just x) = [x]
 maybeToList Nothing  = []
 
-processLink :: [(String, JsonValue)] -> [Inline]
-processLink obj = 
-    let url = findString "url" obj
-        contentArray = findArray "content" obj
-        content = maybe [] (concatMap processArrayItem) contentArray
-    in [Link content (maybe "" id url, "")]
-
-processImage :: [(String, JsonValue)] -> [Inline]
-processImage obj = 
-    let url = findString "url" obj
-        altArray = findArray "alt" obj
-        alt = maybe [] (concatMap processArrayItem) altArray
-    in [Image alt (maybe "" id url, "")]
-
 processInlines :: Maybe String -> [Inline]
 processInlines Nothing = []
-processInlines (Just str) = [Str str]
+processInlines (Just str) = [Str (cleanString str)]
 
 findString :: String -> [(String, JsonValue)] -> Maybe String
 findString key obj = case lookup key obj of

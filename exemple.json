@@ -13,7 +13,7 @@
         ],
         {
             "section": {
-                "title": "header 1",
+                "title": "header",
                 "content": [
                     [
                         "This is a basic paragraph with text."
@@ -35,7 +35,7 @@
                     ],
                     {
                         "section": {
-                            "title": "header 2",
+                            "title": "header",
                             "content": [
                                 {
                                     "codeblock": [
