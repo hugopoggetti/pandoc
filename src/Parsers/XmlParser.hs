@@ -14,6 +14,7 @@ import Control.Applicative (Alternative(..))
 import Ast.Document
 import Text.Read (readMaybe)
 import Data.Maybe (fromJust)
+import Debug.Trace
 
 -- | Basic XML structure
 data XmlValue
@@ -88,7 +89,8 @@ getblock (XmlElement "section" attribute block) =
   in [Section sectionLevel title content]
 getblock (XmlElement "list" _ items) = [BulletList
    (map (\(XmlElement _ _ is) -> [Para (concatMap getInline is)]) items)]
-getblock (XmlElement "codeblock" _ [XmlText content]) = [CodeBlock content]
+getblock (XmlElement "codeblock" _ [XmlElement _ _ [XmlText current]]) =
+  [CodeBlock current]
 getblock _ = [Null]
 
 extractSectionLevel :: String -> Int
