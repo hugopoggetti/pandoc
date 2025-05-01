@@ -14,6 +14,7 @@ import Data.Maybe
 import Renders.MarkdownRender.MarkdownRender (markdownRender)
 import Renders.JsonRender.JsonRender (jsonRender)
 import Renders.XmlRender.XmlRender (xmlRender)
+import Renders.HtmlRender.HtmlRender (htmlRender)
 import System.Exit
 import Parsers.JsonParser (parseJson)
 import Parsers.XmlParser (parsexml)
@@ -26,14 +27,25 @@ getinputfile content opts
     | fromJust (inputFormat opts) == "xml" = parsexml content newdoc
     | otherwise = Nothing
 
+-- | return list of supported output format
+getSupportedOutput :: [String]
+getSupportedOutput = ["html", "json", "markdown", "xml"]
+
+-- | return string of the following format
+getValidDoc :: String -> Document -> String
+getValidDoc format doc 
+    | format == "html" = htmlRender doc
+    | format == "xml" = xmlRender doc
+    | format == "json" = jsonRender doc
+    | format == "markdown" = markdownRender doc
+    | otherwise = "Not valid format"
+
 parsefile :: String -> Opts -> IO ()
-parsefile content opts
-    |fromJust(outputFormat opts)=="json"=let js=getinputfile content opts in if
-    js==Nothing then exitWith(ExitFailure 84)else
-        putStrLn(jsonRender (fromJust js))
-    |fromJust(outputFormat opts)=="markdown"=let md=getinputfile content opts
-    in if md==Nothing then exitWith(ExitFailure 84)
-    else putStrLn(markdownRender (fromJust md))
-    |fromJust(outputFormat opts)=="xml"=let xml=getinputfile content opts in
-    if xml==Nothing then exitWith(ExitFailure 84)
-    else putStrLn(xmlRender (fromJust xml))|otherwise=exitWith(ExitFailure 84)
+parsefile content opts 
+    | fromJust (outputFormat opts) `elem` getSupportedOutput =
+        let doc = getinputfile content opts
+        in if doc == Nothing then exitWith(ExitFailure 84) 
+        else putStrLn $ 
+            getValidDoc (fromJust (outputFormat opts)) (fromJust doc)  
+    | otherwise = exitWith(ExitFailure(84))
+

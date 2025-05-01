@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -32,6 +32,7 @@ library
       Renders.JsonRender.JsonRender
       Renders.XmlRender.XmlRender
       Renders.DebugRender.DebugRender
+      Renders.HtmlRender.HtmlRender
       Parsers.JsonParser
       Parsers.XmlParser
       Parsers.MarkdownParser
