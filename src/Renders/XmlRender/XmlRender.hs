@@ -21,13 +21,13 @@ xmlRenderInlines = concatMap xmlRenderInline
 -- | Recursive function to render inline in xml format
 xmlRenderInline :: Inline -> String
 xmlRenderInline (Str s) = s
-xmlRenderInline (Emph xs) = "<italic>" ++ xmlRenderInlines xs ++ "</italic>\n"
-xmlRenderInline (Strong xs) = "<bold>" ++ xmlRenderInlines xs ++ "</bold>\n"
+xmlRenderInline (Emph xs) = "<italic>" ++ xmlRenderInlines xs ++ "</italic>"
+xmlRenderInline (Strong xs) = "<bold>" ++ xmlRenderInlines xs ++ "</bold>"
 xmlRenderInline (Code s) = "<code>" ++ s ++ "</code>" 
 xmlRenderInline (Link i (ur, title)) = "<link url=" ++ show ur ++ ">"
-    ++ xmlRenderInlines i ++ title ++ "</link>\n"
+    ++ xmlRenderInlines i ++ title ++ "</link>"
 xmlRenderInline (Image i (ur, title)) = "<image url=" ++ show ur ++ ">"
-    ++ xmlRenderInlines i   ++ title ++ "</image>\n"
+    ++ xmlRenderInlines i   ++ title ++ "</image>"
 xmlRenderInline _ = ""
 
 -- | Rende list of block
