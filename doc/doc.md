@@ -192,7 +192,145 @@ Build complex output by composing the output of smaller elements.
 - **Whitespace handling**: Ensuring correct spacing between elements
 - **Context-sensitive rendering**: Some elements may need to be rendered differently based on context
 
-By following this structure, you can implement renderers for any desired output format while maintaining a consistent approach across your system.
+## Adding New Formats to MyPandoc
+
+To extend MyPandoc with new input or output formats, you need to modify several components of the system. Here's a step-by-step guide:
+
+### Adding a New Output Format
+
+1. **Create a new renderer module** following the renderer implementation guidelines above.
+
+2. **Update the supported output formats list**:
+   ```haskell
+   getSupportedOutput :: [String]
+   getSupportedOutput = ["html", "json", "markdown", "xml", "your_new_format"]
+   ```
+
+3. **Register your new renderer in the getValidDoc function**:
+   ```haskell
+   getValidDoc :: String -> Document -> String
+   getValidDoc format doc 
+       | format == "html" = htmlRender doc
+       | format == "xml" = xmlRender doc
+       | format == "json" = jsonRender doc
+       | format == "markdown" = markdownRender doc
+       | format == "your_new_format" = yourFormatRender doc
+       | otherwise = "Not valid format"
+   ```
+
+4. **Export your new renderer function** in the appropriate module file.
+
+### Adding a New Input Format
+
+1. **Create a new parser module** following the parser implementation guidelines below.
+
+2. **Update the getinputfile function** to recognize your format:
+   ```haskell
+   getinputfile :: String -> Opts -> Maybe Document
+   getinputfile content opts
+       | fromJust (inputFormat opts) == "json" = parseJson content newdoc
+       | fromJust (inputFormat opts) == "markdown" =  parsemd content newdoc
+       | fromJust (inputFormat opts) == "xml" = parsexml content newdoc
+       | fromJust (inputFormat opts) == "your_new_format" = parseYourFormat content newdoc
+       | otherwise = Nothing
+   ```
+
+3. **Export your parser function** in the appropriate module file.
+
+### Example: Adding LaTeX Support
+
+Here's a simplified example of adding LaTeX as both an input and output format:
+
+#### Output Format (LaTeX Renderer)
+
+1. Create a LaTeX renderer module:
+   ```haskell
+   module LaTeXRender (latexRender) where
+
+   import Types
+
+   latexRender :: Document -> String
+   latexRender (Document meta blocks) = 
+     "\\documentclass{article}\n\\begin{document}\n" ++
+     renderLatexMeta meta ++ 
+     renderLatexBlocks blocks ++
+     "\\end{document}"
+
+   renderLatexMeta :: Meta -> String
+   renderLatexMeta (Meta title authors date) = 
+     "\\title{" ++ renderLatexInlines title ++ "}\n" ++
+     "\\author{" ++ renderLatexAuthors authors ++ "}\n" ++
+     "\\date{" ++ renderLatexInlines date ++ "}\n" ++
+     "\\maketitle\n\n"
+
+   renderLatexAuthors :: [[Inline]] -> String
+   renderLatexAuthors = -- Implementation
+
+   renderLatexBlocks :: [Block] -> String
+   renderLatexBlocks = -- Implementation
+
+   renderLatexInlines :: [Inline] -> String
+   renderLatexInlines = -- Implementation
+   ```
+
+2. Update the supported formats list:
+   ```haskell
+   getSupportedOutput :: [String]
+   getSupportedOutput = ["html", "json", "markdown", "xml", "latex"]
+   ```
+
+3. Register the renderer:
+   ```haskell
+   getValidDoc :: String -> Document -> String
+   getValidDoc format doc 
+       | format == "html" = htmlRender doc
+       | format == "xml" = xmlRender doc
+       | format == "json" = jsonRender doc
+       | format == "markdown" = markdownRender doc
+       | format == "latex" = latexRender doc
+       | otherwise = "Not valid format"
+   ```
+
+#### Input Format (LaTeX Parser)
+
+1. Create a LaTeX parser module:
+   ```haskell
+   module LaTeXParser (parseLatex) where
+
+   import Types
+   import Lib
+
+   -- Define intermediate representation
+   data LaTeXNode
+     = LaTeXCommand String [LaTeXNode]
+     | LaTeXEnvironment String [LaTeXNode]
+     | LaTeXText String
+
+   -- Create parser functions
+   parseLatexNode :: Parser LaTeXNode
+   parseLatexNode = -- Implementation
+
+   -- Create conversion functions
+   latexToDocument :: LaTeXNode -> Document
+   latexToDocument = -- Implementation
+
+   -- Create entry point
+   parseLatex :: String -> Document -> Maybe Document
+   parseLatex input _ = do
+     (node, _) <- parseLatexNode input
+     return (latexToDocument node)
+   ```
+
+2. Update the input file handler:
+   ```haskell
+   getinputfile :: String -> Opts -> Maybe Document
+   getinputfile content opts
+       | fromJust (inputFormat opts) == "json" = parseJson content newdoc
+       | fromJust (inputFormat opts) == "markdown" =  parsemd content newdoc
+       | fromJust (inputFormat opts) == "xml" = parsexml content newdoc
+       | fromJust (inputFormat opts) == "latex" = parseLatex content newdoc
+       | otherwise = Nothing
+   ```
 
 ## Parsing Input Formats
 

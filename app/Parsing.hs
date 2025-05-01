@@ -20,6 +20,10 @@ import Parsers.JsonParser (parseJson)
 import Parsers.XmlParser (parsexml)
 import Parsers.MarkdownParser (parsemd)
 
+-- | return list of supported output format
+getSupportedOutput :: [String]
+getSupportedOutput = ["html", "json", "markdown", "xml"]
+
 getinputfile :: String -> Opts -> Maybe Document
 getinputfile content opts
     | fromJust (inputFormat opts) == "json" = parseJson content newdoc
@@ -27,9 +31,6 @@ getinputfile content opts
     | fromJust (inputFormat opts) == "xml" = parsexml content newdoc
     | otherwise = Nothing
 
--- | return list of supported output format
-getSupportedOutput :: [String]
-getSupportedOutput = ["html", "json", "markdown", "xml"]
 
 -- | return string of the following format
 getValidDoc :: String -> Document -> String

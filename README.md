@@ -15,7 +15,7 @@ It is commonly used to generate professional outputs in formats such as PDF, HTM
 - **Markdown**  `input/output`
 - **JSON**      `input/output`
 - **XML**       `input/output`
-- **HTML**      `input/output`
+- **HTML**      `output`
 
 It features:
 
@@ -40,11 +40,10 @@ It features:
 ```bash
 ./mypandoc -i file.md -f json -o output.json -e markdown
 ```
-
 ## Documentation – AST and Parsing
 
 This section details how `MyPandoc` internally represents and parses documents.
 The entire document is transformed into a custom **Abstract Syntax Tree (AST)** inspired by the structure used in Pandoc,
 designed to reflect the semantic structure of content regardless of the input format (Markdown, JSON, or XML).
 
-[Documentation pdf](./doc/doc.pdf) or [markdown](./doc/doc.md)
+[pdf](./doc/doc.pdf) or [markdown](./doc/doc.md)
