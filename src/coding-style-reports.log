@@ -1,7 +1,0 @@
-./Parsers/MarkdownParser.hs:50: MINOR:H-F3 # too long line
-./Parsers/MarkdownParser.hs:57: MINOR:H-F3 # too long line
-./Parsers/MarkdownParser.hs:97: MINOR:H-F3 # too long line
-./Parsers/MarkdownParser.hs:101: MINOR:H-F3 # too long line
-./Parsers/MarkdownParser.hs:116: MINOR:H-F3 # too long line
-./Parsers/MarkdownParser.hs:134: MINOR:H-F3 # too long line
-./Parsers/XmlParser.hs:32: MINOR:H-F4 # too long function

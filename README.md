@@ -46,4 +46,4 @@ This section details how `MyPandoc` internally represents and parses documents.
 The entire document is transformed into a custom **Abstract Syntax Tree (AST)** inspired by the structure used in Pandoc,
 designed to reflect the semantic structure of content regardless of the input format (Markdown, JSON, or XML).
 
-[Documentation here:](./doc/doc.md)
+[Documentation pdf](./doc/doc.pdf) or [markdown](./doc/doc.md)
