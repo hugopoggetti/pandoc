@@ -157,7 +157,7 @@ processHeader (Just headerObj) =
 cleanString :: String -> String
 cleanString = filter (/= '\n') . trimEnd
   where
-    trimEnd = reverse . dropWhile (`elem` " \t\n\r") . reverse
+    trimEnd = reverse . dropWhile (`elem` "\t\n\r") . reverse
 
 processBody :: [JsonValue] -> Int -> [Block]
 processBody bodyItems level = concatMap (processBodyItem level) bodyItems
