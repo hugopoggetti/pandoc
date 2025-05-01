@@ -67,7 +67,7 @@ jsonRenderBlock :: Block -> String
 jsonRenderBlock (Plain xs) = jsonRenderInlines xs
 jsonRenderBlock (Para xs) =  jsonRenderInlines xs
 jsonRenderBlock (CodeBlock str) = 
-  "{\"codeblock\": [" ++ toJson (escapeQuotes str) ++ "]}"
+  "{\"codeblock\": [[" ++ toJson (escapeQuotes str) ++ "]]}"
 jsonRenderBlock (RawBlock (Format f) str) = 
   "{\"rawblock\": {\"format\": " ++ toJson f ++ ", \"content\": "
     ++ toJson (escapeBackslashes str) ++ "}}"
