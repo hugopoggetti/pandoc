@@ -40,7 +40,6 @@ parseMetadata :: String -> (Meta, String)
 parseMetadata input =
     let lines = extractMetadataLines input
         meta = buildMeta input
-        trace 
         --rest = extractRestBody input lines
     in (meta, "")
 
