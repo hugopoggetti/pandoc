@@ -145,5 +145,30 @@ newtype Format = Format String
 ```
 ---
 ## Parsing
-...
 
+### Supported Parsers
+The following input formats are supported:
+- **Markdown**
+- **JSON**
+- **XML**
+
+### Parsing Capabilities
+The parsing process extracts and organizes document content into structured components. Key functionalities include:
+
+#### Metadata Extraction
+- **Title**: Captures the document's main title.
+- **Author(s)**: Identifies the author(s) of the document.
+- **Date**: Extracts the creation or publication date.
+
+#### Block-Level Extraction
+- **Headings**: Detects and processes section titles.
+- **Paragraphs**: Identifies and structures text paragraphs.
+- **Code Blocks**: Extracts and formats blocks of code.
+- **Links**: Parses hyperlinks and their targets.
+- **Images**: Extracts image references and metadata.
+- **Lists**: Processes both ordered and unordered lists.
+
+#### Inline Element Extraction
+- **Bold Text**: Recognizes and formats strongly emphasized text.
+- **Italic Text**: Identifies and formats emphasized text.
+- **Inline Code**: Extracts and formats inline code snippets.
