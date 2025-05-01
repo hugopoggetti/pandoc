@@ -18,7 +18,6 @@ import System.Exit
 import Parsers.JsonParser (parseJson)
 import Parsers.XmlParser (parsexml)
 import Parsers.MarkdownParser (parsemd)
-import Data.Maybe (Maybe (Nothing), fromJust)
 
 getinputfile :: String -> Opts -> Maybe Document
 getinputfile content opts

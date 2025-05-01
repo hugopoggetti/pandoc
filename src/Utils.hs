@@ -8,9 +8,6 @@
 {-# HLINT ignore "Use isNothing" #-}
 
 module Utils (splitOne, splitOn, joinWithComma) where
-import Ast.Document (Inline)
-import Data.List
-import Data.Maybe (fromJust)
 
 splitOn :: Eq a => a -> [a] -> [[a]]
 splitOn _ [] = []

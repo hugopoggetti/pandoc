@@ -12,9 +12,7 @@ module Parsers.XmlParser (parsexml) where
 import Lib
 import Control.Applicative (Alternative(..))
 import Ast.Document
-import Text.Read (readMaybe)
 import Data.Maybe (fromJust)
-import Debug.Trace
 
 -- | Basic XML structure
 data XmlValue
@@ -25,7 +23,7 @@ data XmlValue
 -- | Basic XML parsing
 parseXmlValue :: Int -> Parser XmlValue
 parseXmlValue level =
-   (parseXmlElement level<|> parseXmlText) <* parseWhitespace
+   parseXmlElement level<|> parseXmlText
 
 parseXmlText :: Parser XmlValue
 parseXmlText = XmlText <$> parseSome (parseAnyCharExcept "<")
