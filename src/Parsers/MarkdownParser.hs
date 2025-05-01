@@ -39,22 +39,47 @@ parseMetadataWithBody rest =
 parseMetadata :: String -> (Meta, String)
 parseMetadata input =
     let lines = extractMetadataLines input
-        rest = extractRestBody input lines
-        meta = buildMeta lines
-    in (meta, rest)
+        meta = buildMeta input
+        trace 
+        --rest = extractRestBody input lines
+    in (meta, "")
 
 extractMetadataLines :: String -> [String]
-extractMetadataLines input = takeWhile (/= "---\n")
+extractMetadataLines input = takeWhile (/= "---") (splitOne '\n' input)
 
 extractRestBody :: String -> [String] -> String
 extractRestBody input lines = unlines (drop (length lines + 1) (splitOne '\n' input))
 
-buildMeta :: [String] -> Meta
-buildMeta lines =
-    let title = fromMaybe "" (lookup "title" (parseMetadataLines lines))
-        author = fromMaybe "" (lookup "author" (parseMetadataLines lines))
-        date = fromMaybe "" (lookup "date" (parseMetadataLines lines))
+buildMeta :: String -> Meta
+buildMeta file =
+    let (title, rest2) = parseTitle file
+        (author, rest3) = parseAuthor rest2
+        (date, _) = parseDate rest3
     in Meta { metaTitle = [Str title], metaAuthors = [[Str author]], metaDate = [Str date] }
+
+parseTitle :: String -> (String , String)
+parseTitle rest = 
+    case runParser (parseString "title:") rest of
+        Just (res, rest) ->
+            let suce = splitOne '\n' rest
+            in (head suce, last suce)
+        Nothing -> error "Failed to parse title"
+
+parseAuthor :: String -> (String , String)
+parseAuthor rest =
+    case runParser (parseString "author:") rest of
+        Just (res, rest) ->
+            let suce = splitOne '\n' rest
+             in (head suce, last suce)
+        Nothing -> error "Failed to parse author"
+
+parseDate :: String -> (String , String)
+parseDate rest = 
+    case runParser (parseString "date:") rest of
+        Just (res, rest) ->
+            let suce = splitOne '\n' rest
+            in (head suce, last suce)
+        Nothing -> error "Failed to parse date"
 
 parseMetadataLines :: [String] -> [(String, String)]
 parseMetadataLines = map parseMetadataLine
@@ -70,9 +95,7 @@ parseMarkdownBlocks content = parseMarkdownLines (splitOne '\n' content)
 parseMarkdownLines :: [String] -> [Block]
 parseMarkdownLines [] = []
 parseMarkdownLines (line:rest)
-    | take 2 line == "# " = parseHeader 1 line rest
-    | take 3 line == "## " = parseHeader 2 line rest
-    | take 4 line == "### " = parseHeader 3 line rest
+    | if null line then True else take 1 line == "#" = parseHeader (length (takeWhile (== '#') line)) line rest
     | take 3 line == "```" = parseCodeBlock rest
     | take 2 line == "- " = parseBulletList (line:rest)
     | "[" `isPrefixOf` line = parseLink line rest
