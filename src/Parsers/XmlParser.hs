@@ -25,7 +25,7 @@ data XmlValue
 -- | Basic XML parsing
 parseXmlValue :: Int -> Parser XmlValue
 parseXmlValue level =
-   parseWhitespace *> (parseXmlElement level<|> parseXmlText) <* parseWhitespace
+   (parseXmlElement level<|> parseXmlText) <* parseWhitespace
 
 parseXmlText :: Parser XmlValue
 parseXmlText = XmlText <$> parseSome (parseAnyCharExcept "<")
