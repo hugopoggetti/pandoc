@@ -12,9 +12,10 @@ It is commonly used to generate professional outputs in formats such as PDF, HTM
 
 **MyPandoc** is a custom Pandoc-like converter built as part of a software project. It converts documents between:
 
-- **Markdown**
-- **JSON**
-- **XML**
+- **Markdown**  `input/output`
+- **JSON**      `input/output`
+- **XML**       `input/output`
+- **HTML**      `input/output`
 
 It features:
 
