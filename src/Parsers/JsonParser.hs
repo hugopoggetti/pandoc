@@ -172,13 +172,11 @@ processObjectByType :: Int -> [(String, JsonValue)] -> [Block]
 processObjectByType level obj
     | Just sectionObj <- findObject "section" obj =
         [processSection sectionObj (level + 1)]
-    | Just items <- findArray "list" obj =
-        [processListAsBlock items]
-    | Just code <- findString "codeblock" obj =
-        [CodeBlock code]
-    | Just codeLines <- findArray "codeblock" obj =
+    | Just items <- findArray "list" obj = [processListAsBlock items]
+    | Just code <- findString "codeblock" obj = [CodeBlock code]
+    | Just codeLines <- findArray "codeblock" obj = 
         [processComplexCodeBlock codeLines]
-    | Just paraItems <- findArray "paragraph" obj =
+    | Just paraItems <- findArray "paragraph" obj = 
         [processParagraphItems paraItems]
     | otherwise = [Null]
 
