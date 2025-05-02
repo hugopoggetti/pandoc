@@ -36,9 +36,7 @@ parseXmlElement level = do
   _ <- parseChar '>'
   let nlevel = getlevel level name
   blocks <- parseMany (parseXmlValue nlevel)
-  _ <- parseString "</"
-  _ <- parseString name
-  _ <- parseChar '>'
+  _ <- parseString ("</" ++ name ++ ">")
   return $ XmlElement name level attribute blocks
 
 getlevel :: Int -> String -> Int
