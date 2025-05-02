@@ -6,6 +6,7 @@
 -}
 
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 module Parsers.XmlParser (parsexml) where
 
@@ -91,7 +92,9 @@ getblock (XmlElement "section" level attribute block) =
   in [Section level title content]
 
 getblock (XmlElement "list"_ _ items) = [BulletList
-   (map (\(XmlElement _ _ _ is) -> [Para (concatMap getInline is)]) items)]
+   (map (\x -> case x of
+             XmlElement _ _ _ is -> [Para (concatMap getInline is)]
+             _ -> [Null]) items)]
 getblock (XmlElement "codeblock"_ _ [XmlElement _ _ _ [XmlText current]]) =
   [CodeBlock current]
 getblock _ = [Null]
