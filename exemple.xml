@@ -8,7 +8,7 @@
         <paragraph>Every syntax element is displayed in this document.</paragraph>
         <section title="header 1">
             <paragraph>This is a basic paragraph with text.</paragraph>
-            <paragraph>This is a paragraph with <bold>   bold</bold>, <italic>  italic</italic>         and <code>   code</code> text.</paragraph>
+            <paragraph>This is a paragraph with <bold>   bold</bold>, <italic>\n  italic</italic>   \n      and <code>   code</code> text.</paragraph>
             <section title="header 2">
                 <codeblock>
                     <paragraph>This is a code block.</paragraph>

@@ -14,6 +14,7 @@ import Lib
 import Control.Applicative (Alternative(..))
 import Ast.Document
 import Data.Maybe (fromJust)
+import Debug.Trace
 
 -- | Basic XML structure
 data XmlValue
@@ -24,7 +25,7 @@ data XmlValue
 -- | Basic XML parsing
 parseXmlValue :: Int -> Parser XmlValue
 parseXmlValue level =
-   parseXmlElement level<|> parseXmlText
+  parseWhitespace *> parseXmlElement level <|> parseXmlText
 
 parseXmlText :: Parser XmlValue
 parseXmlText = XmlText <$> parseSome (parseAnyCharExcept "<")
@@ -38,6 +39,7 @@ parseXmlElement level = do
   let nlevel = getlevel level name
   blocks <- parseMany (parseXmlValue nlevel)
   _ <- parseString ("</" ++ name ++ ">")
+  _ <- parseWhitespace
   return $ XmlElement name level attribute blocks
 
 getlevel :: Int -> String -> Int
@@ -91,13 +93,17 @@ getblock (XmlElement "section" level attribute block) =
       content = concatMap getblock block
   in [Section level title content]
 
-getblock (XmlElement "list"_ _ items) = [BulletList
-   (map (\x -> case x of
-             XmlElement _ _ _ is -> [Para (concatMap getInline is)]
-             _ -> [Null]) items)]
-getblock (XmlElement "codeblock"_ _ [XmlElement _ _ _ [XmlText current]]) =
+getblock (XmlElement "list" _ _ items) =
+  [BulletList (map getListItem items)]
+
+getblock (XmlElement "codeblock"_ _ [XmlElement _ _ _ [XmlText current]]) = 
   [CodeBlock current]
 getblock _ = [Null]
+
+getListItem :: XmlValue -> [Block]
+getListItem (XmlElement _ _ _ is) =
+  [Para (concatMap getInline is)]
+getListItem (XmlText t) = trace "wtf ?"[Para [Str t]]
 
 getInline :: XmlValue -> [Inline]
 getInline (XmlText text) = [Str text]
