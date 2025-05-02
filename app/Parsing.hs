@@ -34,12 +34,11 @@ getinputfile content opts
 
 -- | return string of the following format
 getValidDoc :: String -> Document -> String
-getValidDoc format doc 
-    | format == "html" = htmlRender doc
-    | format == "xml" = xmlRender doc
-    | format == "json" = jsonRender doc
-    | format == "markdown" = markdownRender doc
-    | otherwise = "Not valid format"
+getValidDoc "html" doc = htmlRender doc
+getValidDoc "xml" doc = xmlRender doc
+getValidDoc "json" doc = jsonRender doc
+getValidDoc "markdown" doc = markdownRender doc
+getValidDoc _ doc = htmlRender doc
 
 parsefile :: String -> Opts -> IO ()
 parsefile content opts 

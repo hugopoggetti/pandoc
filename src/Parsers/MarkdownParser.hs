@@ -11,6 +11,7 @@ module Parsers.MarkdownParser (parsemd) where
 import Ast.Document
 import Data.List (isPrefixOf)
 import Lib
+import Utils (splitOne)
 
 data MdBlock
   = MdParagraph [String]
@@ -29,39 +30,48 @@ groupMarkdown content _ =
 parseLines :: [String] -> Int -> ([MdBlock], [String])
 parseLines [] _ = ([], [])
 parseLines (l:ls) level
-  | "```" `isPrefixOf` l =
-      let (codeLines, rest) = break (isPrefixOf "```") ls
-          rest' = drop 1 rest
-          (blocks, remaining) = parseLines rest' level
-      in (MdCodeBlock (unlines codeLines) : blocks, remaining)
-
-  | "*" `isPrefixOf` l || "-" `isPrefixOf` l =
-      let (items, rest) = span (\line -> "*" `isPrefixOf` line || "-" `isPrefixOf` line) (l:ls)
-          (blocks, remaining) = parseLines rest level
-      in (MdList items : blocks, remaining)
-
+  | "```" `isPrefixOf` l = createcodeb (l:ls) level
+  | "-" `isPrefixOf` l = createlist (l:ls) level
   | null l = parseLines ls level
-
-  | "#" `isPrefixOf` l =
-      let (header, rest) = mdSection (l:ls) level
-          (blocks, remaining) = parseLines rest level
-      in (header : blocks, remaining)
-
+  | "#" `isPrefixOf` l = createheader (l:ls) level
   | otherwise =
-      let (paraLines, rest) = break null (l:ls)
-          (blocks, remaining) = parseLines (dropWhile null rest) level
-      in (MdParagraph paraLines : blocks, remaining)
+  let (paraLines, rest) = break null (l:ls)
+      (blocks, remaining) = parseLines (dropWhile null rest) level
+  in (MdParagraph paraLines : blocks, remaining)
 
--- ismissingsection :: [String] ->Int -> Int -> (MdBlock, [String])
--- ismissingsection (l:ls) level clevel= if clevel < level then ()
+createheader :: [String] -> Int -> ([MdBlock], [String])
+createheader (l:ls) level = 
+  let (header, rest) = mdSection (l:ls) level
+      (blocks, remaining) = parseLines rest level
+  in (header : blocks, remaining)
+
+createcodeb :: [String] -> Int -> ([MdBlock], [String])
+createcodeb (_:ls) level = 
+   let (codeLines, rest) = break (isPrefixOf "```") ls
+       rest' = drop 1 rest
+       (blocks, remaining) = parseLines rest' level
+  in (MdCodeBlock (unlines codeLines) : blocks, remaining)
+
+createlist :: [String] -> Int -> ([MdBlock], [String])
+createlist (l:ls) level = 
+  let (items,rest)=span(\line->"-"`isPrefixOf`line)(l:ls)
+      (blocks, remaining) = parseLines rest level
+  in (MdList items : blocks, remaining)
+
+ismissingsection :: [String] ->Int -> Int -> (MdBlock, [String])
+ismissingsection (l:ls) level clevel= 
+  let (nextsect, file) = mdSection (l:ls) (level+1)
+      (inblock, nfile) = parseLines ls clevel
+      line = splitOne ' ' l
+  in if clevel > (level+1) then (MdHeader (level+1) "" [nextsect], file) else 
+    (MdHeader clevel (last line) inblock, nfile)
 
 mdSection :: [String] -> Int -> (MdBlock, [String])
 mdSection (l:ls) level =
   let clevel = length (takeWhile ( =='#') l)
-      line = dropWhile (== ' ') l
       (inblock, file)= parseLines ls clevel
   in if clevel == 0 then (MdHeader (level+1) "" inblock, file) else
-    (MdHeader clevel line inblock, file)
+    ismissingsection (l:ls) level clevel
 
 mdBlockToBlock :: MdBlock -> Block
 mdBlockToBlock (MdCodeBlock txt) = CodeBlock txt
