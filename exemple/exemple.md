@@ -37,6 +37,6 @@ All combined syntax elements aren't displayed in this document.
 # header 1 new
 with content 
 
-## another header
+### another header
 with content again
 

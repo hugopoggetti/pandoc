@@ -40,12 +40,18 @@ getValidDoc "json" doc = jsonRender doc
 getValidDoc "markdown" doc = markdownRender doc
 getValidDoc _ doc = htmlRender doc
 
+writeDocument :: Opts -> String -> IO ()
+writeDocument args doc =
+    case outputFile args of
+        Just path -> writeFile path doc
+        Nothing   -> putStrLn doc
+
 parsefile :: String -> Opts -> IO ()
 parsefile content opts 
     | fromJust (outputFormat opts) `elem` getSupportedOutput =
         let doc = getinputfile content opts
         in if doc == Nothing then exitWith(ExitFailure 84) 
-        else putStrLn $ 
+        else writeDocument opts $ 
             getValidDoc (fromJust (outputFormat opts)) (fromJust doc)  
     | otherwise = exitWith(ExitFailure(84))
 

@@ -11,7 +11,7 @@ import Lib (Parser, runParser,
         parseMany,
         parseSome)
 
-runTests :: IO ()
-runTests = do
+main :: IO ()
+main = do
     putStrLn "lib test\n"
-    -- quickCheck runParser
+

@@ -60,10 +60,6 @@ checkoptionnal opts
       let ext = getFileExtension (fromJust (inputFile opts))
           fmt = if ext == "md" then "markdown" else ext
       in checkoptionnal opts { inputFormat = Just fmt }
-  | outputFile opts == Nothing =
-      let name = getFileBaseName (fromJust (inputFile opts))
-      in checkoptionnal opts { outputFile = Just ("./" ++ name ++ "."
-      ++ fromJust (getOutputFormat (fromJust (outputFormat opts)))) }
   | otherwise = isValidFile opts
 
 readthefile :: String -> IO String

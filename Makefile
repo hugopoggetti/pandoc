@@ -18,6 +18,7 @@ run:
 	stack exec $(EXEC)
 
 tests_run:
+	make all
 	stack test
 
 clean:

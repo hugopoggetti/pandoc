@@ -17,13 +17,13 @@ data Opts = Opts {
 getNext :: Maybe Int -> [String] -> Maybe String
 getNext Nothing _ = Nothing
 getNext (Just i) args
-    | (i + 1) == (length args) = Nothing
-    | otherwise = Just ((args !! (i + 1)))
+    | (i + 1) == length args = Nothing
+    | otherwise = Just (args !! (i + 1))
 
 findOption :: String -> [String] -> Int -> Maybe Int
 findOption _ [] _ = Nothing
 findOption opt (x:xs) i
-    | opt == x = (Just i)
+    | opt == x = Just i
     | otherwise = findOption opt xs (i + 1)
 
 optsParser :: [String] -> Opts
@@ -53,7 +53,7 @@ removeElem _ [] = []
 removeElem [] _ = []
 removeElem (x:xs) str
     | str == x = removeElem xs str
-    | otherwise = x : (removeElem xs str)
+    | otherwise = x : removeElem xs str
 
 getRest :: [String] -> [String] -> [String]
 getRest [] _ = []
