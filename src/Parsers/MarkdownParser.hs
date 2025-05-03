@@ -45,7 +45,8 @@ createheader (l:ls) level =
   let clevel = length (takeWhile ( =='#') l)
       (header, rest) = mdSection (l:ls) level
       (blocks, remaining) = parseLines rest level
-  in if clevel /= 0 && clevel <= level then (blocks, l:ls) else (header : blocks, remaining)
+  in if clevel /= 0 && clevel <= level then (blocks, l:ls)
+  else (header : blocks, remaining)
 
 createcodeb :: [String] -> Int -> ([MdBlock], [String])
 createcodeb (_:ls) level =
