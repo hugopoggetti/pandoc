@@ -46,11 +46,11 @@ getlevel :: Int -> String -> Int
 getlevel level "section" = level + 1
 getlevel level _ = level
 
-
 parseXmlAttribute :: Parser (String, String)
 parseXmlAttribute = do
+  _ <- parseWhitespace
   headerc <- parseSome (parseAnyChar 
-    (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ " "))
+    (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']))
   _ <- parseChar '='
   _ <- parseChar '"'
   value <- parseMany (parseAnyCharExcept "\"")
