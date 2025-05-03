@@ -6,6 +6,7 @@
 -}
 
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-incomplete-patterns #-}
 
 module Parsers.MarkdownParser (parsemd) where
 import Ast.Document
@@ -41,9 +42,10 @@ parseLines (l:ls) level
 
 createheader :: [String] -> Int -> ([MdBlock], [String])
 createheader (l:ls) level =
-  let (header, rest) = mdSection (l:ls) level
+  let clevel = length (takeWhile ( =='#') l)
+      (header, rest) = mdSection (l:ls) level
       (blocks, remaining) = parseLines rest level
-  in (header : blocks, remaining)
+  in if clevel /= 0 && clevel <= level then (blocks, l:ls) else (header : blocks, remaining)
 
 createcodeb :: [String] -> Int -> ([MdBlock], [String])
 createcodeb (_:ls) level =
