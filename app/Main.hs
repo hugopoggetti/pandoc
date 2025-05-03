@@ -33,10 +33,12 @@ import Ast.Document
 import Data.Maybe (fromJust, isNothing)
 import Utils
 import Parsing
+import Debug.Trace
 
 
 getFileExtension :: String -> String
-getFileExtension fname = last (splitOn '.' fname)
+getFileExtension fname = if last (splitOn '.' fname) == "md" then
+    "markdown" else last (splitOn '.' fname)
 
 getFileBaseName :: String -> String
 getFileBaseName fname = head (splitOn '.' fname)
@@ -68,7 +70,7 @@ readthefile path = do
     hGetContents fileHandle
 
 ismd :: String -> String
-ismd format = if format == "md" then "markdown" else format
+ismd format = trace format (if format == "md" then "markdown" else format)
 
 validInput :: Opts -> Bool
 validInput opts
