@@ -45,7 +45,8 @@ createheader (l:ls) level =
   let clevel = length (takeWhile ( =='#') l)
       (header, rest) = mdSection (l:ls) level
       (blocks, remaining) = parseLines rest level
-  in if clevel /= 0 && clevel <= level then (blocks, l:ls) else (header : blocks, remaining)
+  in if clevel /= 0 && clevel <= level then (blocks, l:ls)
+  else (header : blocks, remaining)
 
 createcodeb :: [String] -> Int -> ([MdBlock], [String])
 createcodeb (_:ls) level =
@@ -141,7 +142,7 @@ parseMarkdownInlines s = case s of
     ('`':rest)     -> parseCodeInline rest
     ('!':'[':rest) -> parseImage rest
     ('[':rest)     -> parseLink rest
-    _ -> let (text, rest) = span (`notElem` "*_`![") s
+    _ -> let (text, rest) = span (`notElem` "*`![") s
       in Str text : parseMarkdownInlines rest
 
 parseDelimited :: String -> ([Inline] -> Inline) -> String -> [Inline]
@@ -150,38 +151,45 @@ parseDelimited delim constructor input =
   in case rest' of
        Just rest -> constructor (parseMarkdownInlines inner) :
         parseMarkdownInlines (drop (length delim) rest)
-       Nothing   -> [Str (delim ++ input)]
+       Nothing   -> 
+        let (text, rest) = span (`notElem` "*`![") input
+        in Str (delim++text): parseMarkdownInlines rest
 
 parseCodeInline :: String -> [Inline]
 parseCodeInline input =
   let (code, rest') = breakOn "`" input
   in case rest' of
        Just rest -> Code code : parseMarkdownInlines (drop 1 rest)
-       Nothing   -> [Str ('`' : input)]
+       Nothing   -> 
+        let (text, rest) = span (`notElem` "*`![") input
+        in Str ("`"++text): parseMarkdownInlines rest
 
 parseLink :: String -> [Inline]
 parseLink input =
   let (txt, rest1) = breakOn "]" input
   in case rest1 of
-    Just urlRest ->
-      let (url, rest2) = breakOn ")" urlRest
+    Just urlRest -> let (url, rest2) = breakOn ")" urlRest
       in case rest2 of
-          Just r -> Link (parseMarkdownInlines txt) (url, "") :
+          Just r ->Link (parseMarkdownInlines txt) (drop 2 url, "") :
             parseMarkdownInlines (drop 1 r)
           Nothing -> [Str ("[" ++ input)]
-    Nothing -> [Str ("[" ++ input)]
+    Nothing ->  let (text, rest) = span (`notElem` "*`![") input
+      in Str ("["++text): parseMarkdownInlines rest
 
 parseImage :: String -> [Inline]
 parseImage input =
   let (alt, rest1) = breakOn "]" input
   in case rest1 of
-    Just urlRest ->
-      let (url, rest2) = breakOn ")" urlRest
+    Just urlRest -> let (url, rest2) = breakOn ")" urlRest
       in case rest2 of
-        Just r -> Image (parseMarkdownInlines alt) (url, "") :
+        Just r -> Image (parseMarkdownInlines alt) (drop 2 url, "") :
           parseMarkdownInlines (drop 1 r)
         Nothing ->[Str ("![" ++ input)]
-    Nothing ->[Str ("![" ++ input)]
+    Nothing -> let (text, rest) = span (`notElem` "*`![") input
+      in Str ("!["++text): parseMarkdownInlines rest
+
+removeParens :: String -> String
+removeParens = filter (`notElem` "()")
 
 breakOn :: String -> String -> (String, Maybe String)
 breakOn delim s =
