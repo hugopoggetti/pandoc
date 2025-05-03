@@ -14,7 +14,7 @@ import Lib
 import Control.Applicative (Alternative(..))
 import Ast.Document
 import Data.Maybe (fromJust)
-import Debug.Trace
+import Control.Monad
 
 -- | Basic XML structure
 data XmlValue
@@ -33,14 +33,14 @@ parseXmlText = XmlText <$> parseSome (parseAnyCharExcept "<")
 parseXmlElement :: Int -> Parser XmlValue
 parseXmlElement level = do
   _ <- parseChar '<'
-  name <- parseSome (parseAnyChar (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']))
+  n <- parseSome (parseAnyChar (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']))
   attribute <- parseMany parseXmlAttribute
   _ <- parseChar '>'
-  let nlevel = getlevel level name
+  let nlevel = getlevel level n
   blocks <- parseMany (parseXmlValue nlevel)
-  _ <- parseString ("</" ++ name ++ ">")
-  _ <- parseWhitespace
-  return $ XmlElement name level attribute blocks
+  _ <- parseString ("</" ++ n ++ ">")
+  unless(n`elem`["bold","italic","link","code","image"])$void parseWhitespace
+  return $ XmlElement n level attribute blocks
 
 getlevel :: Int -> String -> Int
 getlevel level "section" = level + 1
@@ -49,8 +49,7 @@ getlevel level _ = level
 
 parseXmlAttribute :: Parser (String, String)
 parseXmlAttribute = do
-  _ <- parseWhitespace
-  headerc <- parseSome (parseAnyChar (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9']))
+  headerc <- parseSome (parseAnyChar (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ " "))
   _ <- parseChar '='
   _ <- parseChar '"'
   value <- parseMany (parseAnyCharExcept "\"")
@@ -103,7 +102,7 @@ getblock _ = [Null]
 getListItem :: XmlValue -> [Block]
 getListItem (XmlElement _ _ _ is) =
   [Para (concatMap getInline is)]
-getListItem (XmlText t) = trace "wtf ?"[Para [Str t]]
+getListItem (XmlText t) = [Para [Str t]]
 
 getInline :: XmlValue -> [Inline]
 getInline (XmlText text) = [Str text]
