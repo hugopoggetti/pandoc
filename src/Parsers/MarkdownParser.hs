@@ -15,7 +15,7 @@ import Utils (splitOne)
 import Debug.Trace (trace)
 
 data MdBlock
-  = MdParagraph [String]
+  = MdParagraph String
   | MdCodeBlock String
   | MdList [String]
   | MdHeader Int String [MdBlock]
@@ -36,9 +36,8 @@ parseLines (l:ls) level
   | null l = parseLines ls level
   | "#" `isPrefixOf` l = createheader (l:ls) level
   | otherwise =
-  let (paraLines, rest) = break null (l:ls)
-      (blocks, remaining) = parseLines (dropWhile null rest) level
-  in (MdParagraph paraLines : blocks, remaining)
+  let (blocks, remaining) = parseLines (dropWhile null ls) level
+  in (MdParagraph l : blocks, remaining)
 
 createheader :: [String] -> Int -> ([MdBlock], [String])
 createheader (l:ls) level =
@@ -84,7 +83,7 @@ mdBlockToBlock (MdHeader level text blocks) =
 
 
 mdBlockToBlock (MdParagraph lines) =
-  Para (parseMarkdownInlines (unwords lines))
+  Para (parseMarkdownInlines lines)
 
 parseMarkdownBlocks :: String -> [Block]
 parseMarkdownBlocks content =
