@@ -12,6 +12,7 @@ import Ast.Document
 import Data.List (isPrefixOf)
 import Lib
 import Utils (splitOne)
+import Debug.Trace (trace)
 
 data MdBlock
   = MdParagraph [String]
@@ -40,30 +41,30 @@ parseLines (l:ls) level
   in (MdParagraph paraLines : blocks, remaining)
 
 createheader :: [String] -> Int -> ([MdBlock], [String])
-createheader (l:ls) level = 
+createheader (l:ls) level =
   let (header, rest) = mdSection (l:ls) level
       (blocks, remaining) = parseLines rest level
   in (header : blocks, remaining)
 
 createcodeb :: [String] -> Int -> ([MdBlock], [String])
-createcodeb (_:ls) level = 
+createcodeb (_:ls) level =
    let (codeLines, rest) = break (isPrefixOf "```") ls
        rest' = drop 1 rest
        (blocks, remaining) = parseLines rest' level
   in (MdCodeBlock (unlines codeLines) : blocks, remaining)
 
 createlist :: [String] -> Int -> ([MdBlock], [String])
-createlist (l:ls) level = 
-  let (items,rest)=span(\line->"-"`isPrefixOf`line)(l:ls)
+createlist (l:ls) level =
+  let (items,rest)=span (\line->"-"`isPrefixOf`line) (l:ls)
       (blocks, remaining) = parseLines rest level
   in (MdList items : blocks, remaining)
 
 ismissingsection :: [String] ->Int -> Int -> (MdBlock, [String])
-ismissingsection (l:ls) level clevel= 
+ismissingsection (l:ls) level clevel=
   let (nextsect, file) = mdSection (l:ls) (level+1)
       (inblock, nfile) = parseLines ls clevel
       line = splitOne ' ' l
-  in if clevel > (level+1) then (MdHeader (level+1) "" [nextsect], file) else 
+  in if clevel > (level+1) then (MdHeader (level+1) "" [nextsect], file) else
     (MdHeader clevel (last line) inblock, nfile)
 
 mdSection :: [String] -> Int -> (MdBlock, [String])
@@ -135,9 +136,7 @@ parseMarkdownInlines :: String -> [Inline]
 parseMarkdownInlines "" = []
 parseMarkdownInlines s = case s of
     ('*':'*':rest) -> parseDelimited "**" Strong rest
-    ('_':'_':rest) -> parseDelimited "__" Strong rest
     ('*':rest)     -> parseDelimited "*" Emph rest
-    ('_':rest)     -> parseDelimited "_" Emph rest
     ('`':rest)     -> parseCodeInline rest
     ('!':'[':rest) -> parseImage rest
     ('[':rest)     -> parseLink rest
@@ -163,25 +162,25 @@ parseLink :: String -> [Inline]
 parseLink input =
   let (txt, rest1) = breakOn "]" input
   in case rest1 of
-       Just (')':'(':urlRest) ->
-         let (url, rest2) = breakOn ")" urlRest
-         in case rest2 of
-              Just r -> Link (parseMarkdownInlines txt) (url, "") :
-                parseMarkdownInlines (drop 1 r)
-              Nothing -> [Str ("[" ++ input)]
-       _ -> [Str ("[" ++ input)]
+    Just urlRest ->
+      let (url, rest2) = breakOn ")" urlRest
+      in case rest2 of
+          Just r -> Link (parseMarkdownInlines txt) (url, "") :
+            parseMarkdownInlines (drop 1 r)
+          Nothing -> [Str ("[" ++ input)]
+    Nothing -> [Str ("[" ++ input)]
 
 parseImage :: String -> [Inline]
 parseImage input =
   let (alt, rest1) = breakOn "]" input
   in case rest1 of
-       Just (')':'(':urlRest) ->
-         let (url, rest2) = breakOn ")" urlRest
-         in case rest2 of
-              Just r -> Image (parseMarkdownInlines alt) (url, "") :
-                parseMarkdownInlines (drop 1 r)
-              Nothing -> [Str ("![" ++ input)]
-       _ -> [Str ("![" ++ input)]
+    Just urlRest ->
+      let (url, rest2) = breakOn ")" urlRest
+      in case rest2 of
+        Just r -> Image (parseMarkdownInlines alt) (url, "") :
+          parseMarkdownInlines (drop 1 r)
+        Nothing ->[Str ("![" ++ input)]
+    Nothing ->[Str ("![" ++ input)]
 
 breakOn :: String -> String -> (String, Maybe String)
 breakOn delim s =
