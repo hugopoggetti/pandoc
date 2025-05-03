@@ -19,7 +19,7 @@ run:
 
 tests_run:
 	make all
-	stack test
+	python test/PandocTest.py
 
 clean:
 	rm -rf $(EXEC)
