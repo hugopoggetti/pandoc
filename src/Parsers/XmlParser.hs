@@ -49,7 +49,8 @@ getlevel level _ = level
 
 parseXmlAttribute :: Parser (String, String)
 parseXmlAttribute = do
-  headerc <- parseSome (parseAnyChar (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ " "))
+  headerc <- parseSome (parseAnyChar 
+    (['a'..'z'] ++ ['A'..'Z'] ++ ['0'..'9'] ++ " "))
   _ <- parseChar '='
   _ <- parseChar '"'
   value <- parseMany (parseAnyCharExcept "\"")
