@@ -67,12 +67,15 @@ readthefile path = do
     fileHandle <- openFile path ReadMode
     hGetContents fileHandle
 
+ismd :: String -> String
+ismd format = if format == "md" then "markdown" else format
+
 validInput :: Opts -> Bool
 validInput opts
     | inputFormat opts == Nothing = validInput (opts {inputFormat =
         Just(getFileExtension (fromJust (inputFile opts)))})
-    | otherwise = if fromJust (inputFormat opts) == getFileExtension
-    (fromJust (inputFile opts)) then True else False
+    | otherwise = if fromJust (inputFormat opts) ==  ismd (getFileExtension(fromJust(inputFile opts)))
+        then True else False
 
 start :: [String] -> Opts -> IO ()
 start args opts
