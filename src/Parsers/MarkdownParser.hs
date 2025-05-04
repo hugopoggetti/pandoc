@@ -11,194 +11,246 @@
 module Parsers.MarkdownParser (parsemd) where
 import Ast.Document
 import Data.List (isPrefixOf)
+import Data.Char (isSpace)
 import Lib
-import Utils (splitOne)
-import Debug.Trace (trace)
-
-data MdBlock
-  = MdParagraph String
-  | MdCodeBlock String
-  | MdList [String]
-  | MdHeader Int String [MdBlock]
-  deriving (Show, Eq)
-
-groupMarkdown :: String -> Int -> [MdBlock]
-groupMarkdown "" _ = []
-groupMarkdown content _ =
-  let ls = lines content
-      (blocks, _)= parseLines ls 0
-  in blocks
-
-parseLines :: [String] -> Int -> ([MdBlock], [String])
-parseLines [] _ = ([], [])
-parseLines (l:ls) level
-  | "```" `isPrefixOf` l = createcodeb (l:ls) level
-  | "-" `isPrefixOf` l = createlist (l:ls) level
-  | null l = parseLines ls level
-  | "#" `isPrefixOf` l = createheader (l:ls) level
-  | otherwise =
-  let (blocks, remaining) = parseLines (dropWhile null ls) level
-  in (MdParagraph l : blocks, remaining)
-
-createheader :: [String] -> Int -> ([MdBlock], [String])
-createheader (l:ls) level =
-  let clevel = length (takeWhile ( =='#') l)
-      (header, rest) = mdSection (l:ls) level
-      (blocks, remaining) = parseLines rest level
-  in if clevel /= 0 && clevel <= level then (blocks, l:ls)
-  else (header : blocks, remaining)
-
-createcodeb :: [String] -> Int -> ([MdBlock], [String])
-createcodeb (_:ls) level =
-   let (codeLines, rest) = break (isPrefixOf "```") ls
-       rest' = drop 1 rest
-       (blocks, remaining) = parseLines rest' level
-  in (MdCodeBlock (unlines codeLines) : blocks, remaining)
-
-createlist :: [String] -> Int -> ([MdBlock], [String])
-createlist (l:ls) level =
-  let (items,rest)=span (\line->"-"`isPrefixOf`line) (l:ls)
-      (blocks, remaining) = parseLines rest level
-  in (MdList items : blocks, remaining)
-
-ismissingsection :: [String] ->Int -> Int -> (MdBlock, [String])
-ismissingsection (l:ls) level clevel=
-  let (nextsect, file) = mdSection (l:ls) (level+1)
-      (inblock, nfile) = parseLines ls clevel
-      line = splitOne ' ' l
-  in if clevel > (level+1) then (MdHeader (level+1) "" [nextsect], file) else
-    (MdHeader clevel (last line) inblock, nfile)
-
-mdSection :: [String] -> Int -> (MdBlock, [String])
-mdSection (l:ls) level =
-  let clevel = length (takeWhile ( =='#') l)
-      (inblock, file)= parseLines ls clevel
-  in if clevel == 0 then (MdHeader (level+1) "" inblock, file) else
-    ismissingsection (l:ls) level clevel
-
-mdBlockToBlock :: MdBlock -> Block
-mdBlockToBlock (MdCodeBlock txt) = CodeBlock txt
-mdBlockToBlock (MdList items) =
-  BulletList (map (\item -> [Para [Str (drop 2 item)]]) items)
-mdBlockToBlock (MdHeader level text blocks) =
-  let title = maybe [] (\t -> [Str t]) (Just text)
-  in Section level title (map mdBlockToBlock blocks)
-
-
-mdBlockToBlock (MdParagraph lines) =
-  Para (parseMarkdownInlines lines)
-
-parseMarkdownBlocks :: String -> [Block]
-parseMarkdownBlocks content =
-  let grouped = groupMarkdown content 0
-  in map mdBlockToBlock grouped
 
 parsemd :: String -> Document -> Maybe Document
-parsemd input _ =
-  let (meta, body) = parseMetadataAndBody input
-      blocks = parseMarkdownBlocks body
+parsemd input _ = parseMarkdownToDocument input
+
+parseMarkdownToDocument :: String -> Maybe Document
+parseMarkdownToDocument input = 
+  let allLines = splitLines input
+      (metaLines, bodyLines) = extractFrontMatter allLines
+      meta = parseMeta metaLines
+      blocks = parseBlocks bodyLines
   in Just (Document meta blocks)
 
-parseMetadataAndBody :: String -> (Meta, String)
-parseMetadataAndBody input =
-  case runParser (parseString "---\n") input of
-    Just (_, rest) -> parseMetadataWithBody rest
-    Nothing        -> (defaultMeta, input)
+splitLines :: String -> [String]
+splitLines = lines
 
-parseMetadataWithBody :: String -> (Meta, String)
-parseMetadataWithBody rest =
-  let (meta, body) = parseMetadata rest
-  in case runParser (parseString "---\n") body of
-      Just (_, finalBody) -> (meta, finalBody)
-      Nothing             -> (meta, body)
+extractFrontMatter :: [String] -> ([String], [String])
+extractFrontMatter allLines
+  | length allLines >= 2 && head allLines == "---" =
+      let (metaLines, rest) = break (== "---") (tail allLines)
+      in if null rest then ([], allLines)
+         else (metaLines, drop 1 rest)
+  | otherwise = ([], allLines)
 
-parseMetadata :: String -> (Meta, String)
-parseMetadata input =
-  let (title, rest1)  = parseField "title:" input
-      (author, rest2) = parseField "author:" rest1
-      (date, rest3)   = parseField "date:" rest2
-  in (Meta
-        { metaTitle = [Str title]
-        , metaAuthors = [[Str author]]
-        , metaDate = [Str date]
-        }, rest3)
+-- | Parse metadata from YAML front matter
+parseMeta :: [String] -> Meta
+parseMeta metaLines = Meta
+  { metaTitle = parseMetaField "title:" metaLines,
+    metaAuthors = [parseMetaField "author:" metaLines],
+    metaDate = parseMetaField "date:" metaLines
+  }
 
-parseField :: String -> String -> (String, String)
-parseField key input =
-  case runParser (parseString key) input of
-    Just (_, rest) ->
-      let (valueLine:remaining) = lines rest
-      in (valueLine, unlines remaining)
-    Nothing -> ("", input)
+-- | Parse a specific metadata field
+parseMetaField :: String -> [String] -> [Inline]
+parseMetaField field lines =
+  case filter (isPrefixOf field) lines of
+    [] -> []
+    (line:_) -> [Str (trimLeading (drop (length field) line))]
 
-defaultMeta :: Meta
-defaultMeta = Meta [] [] []
+trimLeading :: String -> String
+trimLeading = dropWhile isSpace
 
-parseMarkdownInlines :: String -> [Inline]
-parseMarkdownInlines "" = []
-parseMarkdownInlines s = case s of
-    ('*':'*':rest) -> parseDelimited "**" Strong rest
-    ('*':rest)     -> parseDelimited "*" Emph rest
-    ('`':rest)     -> parseCodeInline rest
-    ('!':'[':rest) -> parseImage rest
-    ('[':rest)     -> parseLink rest
-    _ -> let (text, rest) = span (`notElem` "*`![") s
-      in Str text : parseMarkdownInlines rest
+-- | Parse all blocks from document body
+parseBlocks :: [String] -> [Block]
+parseBlocks [] = []
+parseBlocks lines =
+  let (block, remainingLines) = parseNextBlock lines
+  in if null remainingLines
+     then [block]
+     else block : parseBlocks remainingLines
 
-parseDelimited :: String -> ([Inline] -> Inline) -> String -> [Inline]
-parseDelimited delim constructor input =
-  let (inner, rest') = breakOn delim input
-  in case rest' of
-       Just rest -> constructor (parseMarkdownInlines inner) :
-        parseMarkdownInlines (drop (length delim) rest)
-       Nothing   -> 
-        let (text, rest) = span (`notElem` "*`![") input
-        in Str (delim++text): parseMarkdownInlines rest
+parseNextBlock :: [String] -> (Block, [String])
+parseNextBlock [] = (Null, [])
+parseNextBlock (line:rest)
+  | all isSpace line = parseNextBlock rest
+  | isPrefixOf "#" line = let depth = length $ takeWhile (=='#') line in
+                          parseSection depth (drop (depth+1) line) rest
+  | isPrefixOf "```" line = parseCodeBlock (drop 3 line) rest
+  | isPrefixOf "- " line = parseBulletList (line:rest)
+  | otherwise = parseParagraph (line:rest)
 
-parseCodeInline :: String -> [Inline]
-parseCodeInline input =
-  let (code, rest') = breakOn "`" input
-  in case rest' of
-       Just rest -> Code code : parseMarkdownInlines (drop 1 rest)
-       Nothing   -> 
-        let (text, rest) = span (`notElem` "*`![") input
-        in Str ("`"++text): parseMarkdownInlines rest
+-- | Parse a section (header and its content)
+parseSection :: Int -> String -> [String] -> (Block, [String])
+parseSection level title rest =
+  let titleInlines = parseInlines title
+      (childBlocks, remaining) = collectSectionContent level rest
+  in (Section level titleInlines childBlocks, remaining)
 
-parseLink :: String -> [Inline]
-parseLink input =
-  let (txt, rest1) = breakOn "]" input
-  in case rest1 of
-    Just urlRest -> let (url, rest2) = breakOn ")" urlRest
-      in case rest2 of
-          Just r ->Link (parseMarkdownInlines txt) (drop 2 url, "") :
-            parseMarkdownInlines (drop 1 r)
-          Nothing -> [Str ("[" ++ input)]
-    Nothing ->  let (text, rest) = span (`notElem` "*`![") input
-      in Str ("["++text): parseMarkdownInlines rest
+isNewSection :: Int -> String -> Bool
+isNewSection level line =
+  case countHeaderLevel line of
+    Just l -> l <= level
+    Nothing -> False
 
-parseImage :: String -> [Inline]
-parseImage input =
-  let (alt, rest1) = breakOn "]" input
-  in case rest1 of
-    Just urlRest -> let (url, rest2) = breakOn ")" urlRest
-      in case rest2 of
-        Just r -> Image (parseMarkdownInlines alt) (drop 2 url, "") :
-          parseMarkdownInlines (drop 1 r)
-        Nothing ->[Str ("![" ++ input)]
-    Nothing -> let (text, rest) = span (`notElem` "*`![") input
-      in Str ("!["++text): parseMarkdownInlines rest
+countHeaderLevel :: String -> Maybe Int
+countHeaderLevel line =
+  let hashes = takeWhile (== '#') line
+      n = length hashes
+  in if n > 0 && length line > n && line !! n == ' '
+        then Just n
+        else Nothing
 
-removeParens :: String -> String
-removeParens = filter (`notElem` "()")
+collectSectionContent :: Int -> [String] -> ([Block], [String])
+collectSectionContent _ [] = ([], [])
+collectSectionContent level allLines@(line:rest)
+  | isNewSection level line = ([], allLines)
+  | all isSpace line = collectSectionContent level rest
+  | otherwise =
+      let (block, afterBlock) = parseNextBlock allLines
+          (moreBlocks, finalRemaining) =
+            collectSectionContent level afterBlock
+      in (block : moreBlocks, finalRemaining)
+
+-- | Parse a code block
+parseCodeBlock :: String -> [String] -> (Block, [String])
+parseCodeBlock _ lines =
+  let (codeLines, rest) = break (isPrefixOf "```") lines
+      code = unlines codeLines
+  in (CodeBlock code, if null rest then [] else tail rest)
+
+-- | Parse a bullet list
+parseBulletList :: [String] -> (Block, [String])
+parseBulletList lines =
+  let (items, rest) = parseListItems lines
+  in (BulletList items, rest)
+
+parseOrderedList :: [String] -> (Block, [String])
+parseOrderedList lines =
+  let (items, rest) = parseListItems lines
+      attributes = (1, Decimal, Period)
+  in (OrderedList attributes items, rest)
+
+addItem :: [[Block]] -> [String] -> [[Block]]
+addItem acc [] = acc
+addItem acc itemLines = parseItemContent itemLines : acc
+
+isListItemStart :: String -> Bool
+isListItemStart l =
+  let trimmed = trimLeading l
+  in isPrefixOf "- " trimmed || isOrderedListItem trimmed
+
+isBlockBreak :: String -> Bool
+isBlockBreak l =
+  isPrefixOf "#" l || isPrefixOf "```" l
+
+isOrderedListItem :: String -> Bool
+isOrderedListItem line =
+  any (\prefix -> isPrefixOf prefix (trimLeading line)) 
+      ["1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. ", "8. ", "9. ", "0. ", 
+       "1) ", "2) ", "3) ", "4) ", "5) ", "6) ", "7) ", "8) ", "9) ", "0) "]
+
+parseListItems :: [String] -> ([[Block]], [String])
+parseListItems [] = ([], [])
+parseListItems lines = go lines [] []
+  where
+    go [] accItems currItem = (reverse $ addItem accItems currItem, [])
+    go (l:ls) accItems currItem
+      | all isSpace l = go ls accItems currItem
+      | isListItemStart l = let updatedItems = addItem accItems currItem
+          in go ls updatedItems [l]
+      | isBlockBreak l =
+          (reverse $ addItem accItems currItem, l:ls)
+      | otherwise = go ls accItems (currItem ++ [l])
+    
+parseItemContent :: [String] -> [Block]
+parseItemContent [] = []
+parseItemContent (firstLine:rest) = 
+    let content = dropListMarker firstLine ++ 
+            if null rest then "" else "\n" ++ unlines rest
+    in [Para (parseInlines content)]
+
+dropListMarker :: String -> String
+dropListMarker line
+  | isPrefixOf "- " (trimLeading line) = drop 2 (trimLeading line)
+  | isOrderedListItem line = 
+      let trimmed = trimLeading line
+          indexOfDot = indexOf '.' trimmed
+          indexOfParen = indexOf ')' trimmed
+          index = if indexOfDot > 0 then indexOfDot else indexOfParen
+      in if index > 0 then trimLeading (drop (index + 1) trimmed) else trimmed
+  | otherwise = line
+
+indexOf :: Char -> String -> Int
+indexOf c s = case dropWhile (/= c) s of
+  [] -> -1
+  (_:_) -> length (takeWhile (/= c) s)
+
+-- | Parse a paragraph
+parseParagraph :: [String] -> (Block, [String])
+parseParagraph [] = (Null, [])
+parseParagraph lines =
+  let (paraLines, rest) = break isParagraphBreak lines
+      content = unwords paraLines
+  in (Para (parseInlines content), rest)
+
+isParagraphBreak :: String -> Bool
+isParagraphBreak "" = True
+isParagraphBreak line =
+  isPrefixOf "#" line || 
+  isPrefixOf "```" line || 
+  isPrefixOf "- " (trimLeading line) || 
+  isOrderedListItem line
+
+spanUntil :: String -> String -> Maybe (String, String)
+spanUntil delim input =
+  case breakOn delim input of
+    (before, Just after) -> Just (before, after)
+    (_, Nothing) -> Nothing
 
 breakOn :: String -> String -> (String, Maybe String)
-breakOn delim s =
-  let (x, y) = breakOn' s
-  in (x, y)
-  where
-    breakOn' [] = ([], Nothing)
-    breakOn' str@(c:cs)
-      | delim `isPrefixOf` str = ([], Just str)
-      | otherwise =
-          let (a, b) = breakOn' cs
-          in (c:a, b)
+breakOn _ [] = ([], Nothing)
+breakOn delim s@(x:xs)
+  | delim `isPrefixOf` s = ("", Just (drop (length delim) s))
+  | otherwise =
+      let (before, found) = breakOn delim xs
+      in (x:before, found)
+-- | Parse inline elements
+parseInlines :: String -> [Inline]
+parseInlines "" = []
+parseInlines ('*':'*':rest) =
+  case spanUntil "**" rest of
+    Just (content, remaining) ->
+      Strong (parseInlines content) : parseInlines remaining
+    Nothing -> Str "*" : parseInlines ('*':rest)
+parseInlines ('*':rest) =
+  case span (/= '*') rest of
+    (content, '*' : remaining) ->
+      Emph (parseInlines content) : parseInlines remaining
+    _ -> Str "*" : parseInlines rest
+parseInlines ('`':rest) =
+  let (content, remaining) = break (== '`') rest
+  in if null remaining
+     then Str ('`' : content) : parseInlines ""
+     else Code content : parseInlines (tail remaining)
+parseInlines ('[':rest) =
+  case parseLinkOrImage rest of
+    Just (inlines, target, remaining) -> 
+        Link inlines target : parseInlines remaining
+    Nothing -> Str "[" : parseInlines rest
+parseInlines ('!':'[':rest) =
+  case parseLinkOrImage rest of
+    Just (inlines, target, remaining) -> 
+        Image inlines target : parseInlines remaining
+    Nothing -> Str "![" : parseInlines rest
+parseInlines (c:rest) =
+  let (text, remaining) = span (not . isSpecialChar) (c:rest)
+  in Str text : parseInlines remaining
+
+isSpecialChar :: Char -> Bool
+isSpecialChar c = c `elem` "*`[]!()"
+
+parseLinkOrImage :: String -> Maybe ([Inline], Target, String)
+parseLinkOrImage str = 
+  let (textContent, rest1) = break (== ']') str
+  in case () of
+       _ | null rest1 || length rest1 < 2 -> Nothing
+         | head (tail rest1) /= '(' -> Nothing
+         | otherwise -> 
+             let (url, rest2) = break (== ')') (drop 2 rest1)
+             in if null rest2
+                then Nothing
+                else Just (parseInlines textContent, (url, ""), tail rest2)

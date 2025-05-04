@@ -76,7 +76,8 @@ validInput :: Opts -> Bool
 validInput opts
     | inputFormat opts == Nothing = validInput (opts {inputFormat =
         Just(getFileExtension (fromJust (inputFile opts)))})
-    | otherwise = if fromJust (inputFormat opts) ==  ismd (getFileExtension(fromJust(inputFile opts)))
+    | otherwise = if fromJust (inputFormat opts) == 
+        ismd (getFileExtension(fromJust(inputFile opts)))
         then True else False
 
 start :: [String] -> Opts -> IO ()

@@ -16,6 +16,7 @@ It is commonly used to generate professional outputs in formats such as PDF, HTM
 - **JSON**      `input/output`
 - **XML**       `input/output`
 - **HTML**      `output`
+- **NATIF**      `output` to understand how ATS is filled
 
 It features:
 
