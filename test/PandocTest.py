@@ -44,7 +44,7 @@ def ExecBasicSucces5():
     return False
 
 def ExecBasicSucces6():
-    result = subprocess.run([(os.getcwd() + "/mypandoc"), "-i", (os.getcwd() + "/exemple/exemple.json"), "-e", "json", "-f", "markdown", "-o", (os.getcwd() + "result.md")], capture_output=True, text=True)
+    result = subprocess.run([(os.getcwd() + "/mypandoc"), "-i", (os.getcwd() + "/exemple/exemple.json"), "-e", "json", "-f", "markdown", "-o", (os.getcwd() + "/result.md")], capture_output=True, text=True)
     if (result.returncode == 0):
         print("Success to execute (6)")
         return True
@@ -52,7 +52,7 @@ def ExecBasicSucces6():
     return False
 
 def ExecBasicSucces7():
-    result = subprocess.run([(os.getcwd() + "/mypandoc"), "-i", (os.getcwd() + "/exemple/exemple.json"), "-f", "xml", "-o", (os.getcwd() + "result.xml")], capture_output=True, text=True)
+    result = subprocess.run([(os.getcwd() + "/mypandoc"), "-i", (os.getcwd() + "/exemple/exemple.json"), "-f", "xml", "-o", (os.getcwd() + "/result.xml")], capture_output=True, text=True)
     if (result.returncode == 0 and os.path.isfile(os.getcwd() + "/result.xml")):
         os.remove(os.getcwd() + "/result.xml")
         print("Success to execute (7)")
