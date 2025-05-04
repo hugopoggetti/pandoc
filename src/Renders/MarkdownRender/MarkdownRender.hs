@@ -11,9 +11,9 @@ import Data.List (intercalate)
 
 -- | get link or img string
 getMarkdownLink ::[Inline] -> Target -> String
-getMarkdownLink inlines (url, title) = 
+getMarkdownLink inlines (url, _) = 
     "[" ++ markRenderInlines inlines ++ "](" ++ url 
-    ++ show title ++ ")"
+    ++ ")"
 
 markRenderRawInline :: Format -> String -> String
 markRenderRawInline (Format fmt) s = 
