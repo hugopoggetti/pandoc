@@ -15,6 +15,7 @@ import Renders.MarkdownRender.MarkdownRender (markdownRender)
 import Renders.JsonRender.JsonRender (jsonRender)
 import Renders.XmlRender.XmlRender (xmlRender)
 import Renders.HtmlRender.HtmlRender (htmlRender)
+import Renders.DebugRender.DebugRender (debugRender)
 import System.Exit
 import Parsers.JsonParser (parseJson)
 import Parsers.XmlParser (parsexml)
@@ -22,7 +23,7 @@ import Parsers.MarkdownParser (parsemd)
 
 -- | return list of supported output format
 getSupportedOutput :: [String]
-getSupportedOutput = ["html", "json", "markdown", "xml"]
+getSupportedOutput = ["html", "json", "markdown", "xml", "natif"]
 
 getinputfile :: String -> Opts -> Maybe Document
 getinputfile content opts
@@ -38,6 +39,7 @@ getValidDoc "html" doc = htmlRender doc
 getValidDoc "xml" doc = xmlRender doc
 getValidDoc "json" doc = jsonRender doc
 getValidDoc "markdown" doc = markdownRender doc
+getValidDoc "natif" doc = debugRender doc
 getValidDoc _ doc = htmlRender doc
 
 writeDocument :: Opts -> String -> IO ()

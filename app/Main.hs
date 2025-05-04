@@ -70,7 +70,7 @@ readthefile path = do
     hGetContents fileHandle
 
 ismd :: String -> String
-ismd format = trace format (if format == "md" then "markdown" else format)
+ismd format = if format == "md" then "markdown" else format
 
 validInput :: Opts -> Bool
 validInput opts
